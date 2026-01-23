@@ -1,26 +1,15 @@
 //! By convention, root.zig is the root source file when making a library.
 const std = @import("std");
 
-pub fn bufferedPrint() !void {
-    // Stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    const stdout1 = &stdout_writer.interface;
+// Stdout is for the actual output of your application, for example if you
+// are implementing gzip, then only the compressed bytes should be sent to
+// stdout, not any debugging messages.
 
-    try stdout1.print("Run `zig build test` to run the tests.\n", .{});
+var stdout_buffer: [1024]u8 = undefined;
+var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+const stdout = &stdout_writer.interface;
 
-    try stdout1.flush(); // Don't forget to flush!
-}
-
-const stdout = initWriter();
-fn initWriter() *std.Io.Writer {
-    var stdout_buffer: [1024]u8 = undefined;
-    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
-    return &stdout_writer.interface;
-}
-
-pub fn printStdout() void {
-    stdout.print();
+pub fn printStdout() !void {
+    try stdout.print("Hello from printStdout.\n", .{});
+    try stdout.flush();
 }
