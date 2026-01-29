@@ -9,7 +9,22 @@ pub fn build(b: *std.Build) !void {
         .target = target,
     });
 
-    const exe = b.addExecutable(.{
+    const exe = addExecutable(b, mod, target, optimize);
+
+    b.installArtifact(exe);
+
+    addRunStep(b, exe);
+
+    addE2eStep(b, target, optimize);
+}
+
+fn addExecutable(
+    b: *std.Build,
+    mod: *std.Build.Module,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) *std.Build.Step.Compile {
+    return b.addExecutable(.{
         .name = "relay",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
@@ -20,12 +35,6 @@ pub fn build(b: *std.Build) !void {
             },
         }),
     });
-
-    b.installArtifact(exe);
-
-    addRunStep(b, exe);
-
-    addE2eStep(b, target, optimize);
 }
 
 fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile) void {
