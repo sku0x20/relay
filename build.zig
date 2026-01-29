@@ -43,9 +43,9 @@ pub fn build(b: *std.Build) !void {
     const e2e_tests = b.addTest(.{
         .root_module = e2e_mod,
     });
+    e2e_tests.step.dependOn(&exe.step);
 
     const run_e2e_tests = b.addRunArtifact(e2e_tests);
     const e2e_step = b.step("e2e", "Run end to end tests");
-    run_e2e_tests.step.dependOn(&exe.step);
     e2e_step.dependOn(&run_e2e_tests.step);
 }
