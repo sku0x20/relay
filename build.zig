@@ -7,7 +7,8 @@ pub fn build(b: *std.Build) !void {
     const exe = addExecutable(b, rootModule, target, optimize);
     b.installArtifact(exe);
     addRunStep(b, exe);
-    addE2eStep(b, target, optimize);
+    const e2e_tests = addE2eTests(b, target, optimize);
+    addE2eRunStep(b, e2e_tests);
 }
 
 fn addExecutable(
@@ -49,7 +50,11 @@ fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile) void {
     }
 }
 
-fn addE2eStep(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) void {
+fn addE2eTests(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) *std.Build.Step.Compile {
     const e2e_mod = b.createModule(.{
         .root_source_file = b.path("e2e/e2e.test.zig"),
         .target = target,
@@ -60,7 +65,10 @@ fn addE2eStep(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bui
         .root_module = e2e_mod,
     });
     e2e_tests.step.dependOn(b.getInstallStep());
+    return e2e_tests;
+}
 
+fn addE2eRunStep(b: *std.Build, e2e_tests: *std.Build.Step.Compile) void {
     const run_e2e_tests = b.addRunArtifact(e2e_tests);
     const e2e_step = b.step("e2e", "Run end to end tests");
     e2e_step.dependOn(&run_e2e_tests.step);
