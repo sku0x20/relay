@@ -3,15 +3,10 @@ const std = @import("std");
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-
     const rootModule = addRootModule(b, target);
-
     const exe = addExecutable(b, rootModule, target, optimize);
-
     b.installArtifact(exe);
-
     addRunStep(b, exe);
-
     addE2eStep(b, target, optimize);
 }
 
