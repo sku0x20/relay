@@ -24,8 +24,7 @@ fn ping() !void {
     defer stream.close();
 
     var stream_writer = stream.writer(&.{});
-    var writer = &stream_writer.interface;
-    try writer.writeAll("ping");
+    try stream_writer.interface.writeAll("ping");
 
     var stream_reader = stream.reader(&.{});
     var buf: [4]u8 = undefined;
