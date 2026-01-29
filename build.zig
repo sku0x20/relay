@@ -34,6 +34,10 @@ pub fn build(b: *std.Build) !void {
         run_cmd.addArgs(args);
     }
 
+    addE2eStep(b, target, optimize);
+}
+
+fn addE2eStep(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) void {
     const e2e_mod = b.createModule(.{
         .root_source_file = b.path("e2e/e2e.test.zig"),
         .target = target,
