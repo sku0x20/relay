@@ -4,12 +4,9 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const mod = b.addModule("relay", .{
-        .root_source_file = b.path("src/root.zig"),
-        .target = target,
-    });
+    const rootModule = addRootModule(b, target);
 
-    const exe = addExecutable(b, mod, target, optimize);
+    const exe = addExecutable(b, rootModule, target, optimize);
 
     b.installArtifact(exe);
 
@@ -20,7 +17,7 @@ pub fn build(b: *std.Build) !void {
 
 fn addExecutable(
     b: *std.Build,
-    mod: *std.Build.Module,
+    rootModule: *std.Build.Module,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
 ) *std.Build.Step.Compile {
@@ -31,9 +28,16 @@ fn addExecutable(
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "relay", .module = mod },
+                .{ .name = "relay", .module = rootModule },
             },
         }),
+    });
+}
+
+fn addRootModule(b: *std.Build, target: std.Build.ResolvedTarget) *std.Build.Module {
+    return b.addModule("relay", .{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
     });
 }
 
