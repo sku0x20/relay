@@ -18,7 +18,12 @@ test "e2e" {
         };
     }
 
-    // todo: wait for port to be opened.
+    try waitForPortOpen(
+        std.testing.allocator,
+        "127.0.0.1",
+        19000,
+        2 * std.time.ms_per_s,
+    );
 
     try ping();
 }
@@ -36,4 +41,24 @@ fn ping() !void {
     var buf: [4]u8 = undefined;
     try reader.readSliceAll(&buf);
     try std.testing.expect(std.mem.eql(u8, &buf, "pong"));
+}
+
+fn waitForPortOpen(
+    allocator: std.mem.Allocator,
+    host: []const u8,
+    port: u16,
+    timeout_ms: u64,
+) !void {
+    const start = std.time.milliTimestamp();
+    while ((std.time.milliTimestamp() - start) < timeout_ms) {
+        if (std.net.tcpConnectToHost(allocator, host, port)) |stream| {
+            stream.close();
+            return;
+        } else |err| switch (err) {
+            error.ConnectionRefused => {},
+            else => return err,
+        }
+        std.Thread.sleep(timeout_ms * std.time.ns_per_ms);
+    }
+    return error.ConnectionRefused;
 }
