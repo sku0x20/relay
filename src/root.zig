@@ -7,14 +7,16 @@ pub fn startRelay() !void {
     });
     defer server.deinit();
 
-    const connection = try server.accept();
-    defer connection.stream.close();
+    while (true) {
+        const connection = try server.accept();
+        defer connection.stream.close();
 
-    var reader = connection.stream.reader(&.{});
-    var buf: [4]u8 = undefined;
-    try reader.interface().readSliceAll(&buf);
-    if (!std.mem.eql(u8, &buf, "ping")) return error.InvalidPing;
+        var reader = connection.stream.reader(&.{});
+        var buf: [4]u8 = undefined;
+        try reader.interface().readSliceAll(&buf);
+        if (!std.mem.eql(u8, &buf, "ping")) continue;
 
-    var stream_writer = connection.stream.writer(&.{});
-    try stream_writer.interface.writeAll("pong");
+        var stream_writer = connection.stream.writer(&.{});
+        try stream_writer.interface.writeAll("pong");
+    }
 }
