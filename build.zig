@@ -23,6 +23,12 @@ pub fn build(b: *std.Build) !void {
 
     b.installArtifact(exe);
 
+    addRunStep(b, exe);
+
+    addE2eStep(b, target, optimize);
+}
+
+fn addRunStep(b: *std.Build, exe: *std.Build.Step.Compile) void {
     const run_step = b.step("run", "Run the app");
 
     const run_cmd = b.addRunArtifact(exe);
@@ -33,8 +39,6 @@ pub fn build(b: *std.Build) !void {
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
-
-    addE2eStep(b, target, optimize);
 }
 
 fn addE2eStep(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) void {
