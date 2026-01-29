@@ -2,7 +2,9 @@ const std = @import("std");
 
 pub fn startRelay() !void {
     const address = try std.net.Address.parseIp("127.0.0.1", 19000);
-    var server = try std.net.Address.listen(address, .{});
+    var server = try std.net.Address.listen(address, .{
+        .reuse_address = true,
+    });
     defer server.deinit();
 
     const connection = try server.accept();
