@@ -13,7 +13,10 @@ pub fn startRelay() !void {
 
         var reader = connection.stream.reader(&.{});
         var buf: [4]u8 = undefined;
-        try reader.interface().readSliceAll(&buf);
+        reader.interface().readSliceAll(&buf) catch |err| switch (err) {
+            error.EndOfStream => continue,
+            else => return err,
+        };
         if (!std.mem.eql(u8, &buf, "ping")) continue;
 
         var stream_writer = connection.stream.writer(&.{});
