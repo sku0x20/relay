@@ -24,5 +24,13 @@ test "e2e" {
 }
 
 fn ping() !void {
-    try std.testing.expect(1 == 1);
+    var stream = try std.net.tcpConnectToHost(std.testing.allocator, "127.0.0.1", 19000);
+    defer stream.close();
+
+    try stream.writer().writeAll("ping");
+
+    var buf: [4]u8 = undefined;
+    const n = try stream.reader().readAll(&buf);
+    try std.testing.expectEqual(@as(usize, 4), n);
+    try std.testing.expect(std.mem.eql(u8, &buf, "pong"));
 }
