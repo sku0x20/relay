@@ -27,10 +27,14 @@ fn ping() !void {
     var stream = try std.net.tcpConnectToHost(std.testing.allocator, "127.0.0.1", 19000);
     defer stream.close();
 
-    try stream.writer().writeAll("ping");
+    try stream.writeAll("ping");
 
     var buf: [4]u8 = undefined;
-    const n = try stream.reader().readAll(&buf);
-    try std.testing.expectEqual(@as(usize, 4), n);
+    var read_len: usize = 0;
+    while (read_len < buf.len) {
+        const n = try stream.read(buf[read_len..]);
+        if (n == 0) return error.EndOfStream;
+        read_len += n;
+    }
     try std.testing.expect(std.mem.eql(u8, &buf, "pong"));
 }
