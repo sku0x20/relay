@@ -70,6 +70,8 @@ fn addE2eTests(
 
 fn addE2eRunStep(b: *std.Build, e2e_tests: *std.Build.Step.Compile) void {
     const run_e2e_tests = b.addRunArtifact(e2e_tests);
+    const exe_path = b.getInstallPath(.bin, "relay");
+    run_e2e_tests.setEnvironmentVariable("RELAY_BIN", exe_path);
     const e2e_step = b.step("e2e", "Run end to end tests");
     e2e_step.dependOn(&run_e2e_tests.step);
 }
