@@ -6,7 +6,7 @@ test "e2e" {
     const exe_path = try std.process.getEnvVarOwned(std.testing.allocator, "RELAY_BIN");
     defer std.testing.allocator.free(exe_path);
 
-    var child = try process_utils.spawnRelay(exe_path);
+    var child = try process_utils.spawnRelay(std.testing.allocator, exe_path);
     defer process_utils.cleanup(&child);
 
     try tcp_utils.waitForPortOpen(

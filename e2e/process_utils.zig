@@ -1,7 +1,7 @@
 const std = @import("std");
 
-pub fn spawnRelay(exe_path: []const u8) !std.process.Child {
-    var child = std.process.Child.init(&.{exe_path}, std.testing.allocator);
+pub fn spawnRelay(allocator: std.mem.Allocator, exe_path: []const u8) !std.process.Child {
+    var child = std.process.Child.init(&.{exe_path}, allocator);
     child.stdin_behavior = .Ignore;
     child.stdout_behavior = .Inherit;
     child.stderr_behavior = .Inherit;
