@@ -1,4 +1,5 @@
 const std = @import("std");
+const tcp_utils = @import("tcp_utils.zig");
 
 test "e2e" {
     const exe_path = try std.process.getEnvVarOwned(std.testing.allocator, "RELAY_BIN");
@@ -18,11 +19,11 @@ test "e2e" {
         };
     }
 
-    try waitForPortOpen(
+    try tcp_utils.waitForPortOpen(
         std.testing.allocator,
         "127.0.0.1",
         19000,
-        2 * std.time.ms_per_s,
+        2 * std.time.ns_per_s,
     );
 
     // try ping();
@@ -41,24 +42,4 @@ fn ping() !void {
     var buf: [4]u8 = undefined;
     try reader.readSliceAll(&buf);
     try std.testing.expect(std.mem.eql(u8, &buf, "pong"));
-}
-
-fn waitForPortOpen(
-    allocator: std.mem.Allocator,
-    host: []const u8,
-    port: u16,
-    timeout_ms: u64,
-) !void {
-    const start = std.time.milliTimestamp();
-    while (timeout_ms > (std.time.milliTimestamp() - start)) {
-        if (std.net.tcpConnectToHost(allocator, host, port)) |stream| {
-            stream.close();
-            return;
-        } else |err| switch (err) {
-            error.ConnectionRefused => {},
-            else => return err,
-        }
-        std.Thread.sleep(10 * std.time.ns_per_ms);
-    }
-    return error.ConnectionRefused;
 }
