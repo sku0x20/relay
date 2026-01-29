@@ -33,21 +33,46 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
+    const e2e_step = b.step("e2e", "Run e2e tests");
 
-    const mod_tests = b.addTest(.{
-        .root_module = mod,
-    });
+    var e2e_dir = b.build_root.handle.openDir("e2e", .{ .iterate = true }) catch |err| {
+        if (err == error.FileNotFound) {
+            return;
+        }
+        @panic(@errorName(err));
+    };
+    defer e2e_dir.close();
 
-    const run_mod_tests = b.addRunArtifact(mod_tests);
+    var walker = e2e_dir.walk(b.allocator) catch |err| {
+        @panic(@errorName(err));
+    };
+    defer walker.deinit();
 
-    const exe_tests = b.addTest(.{
-        .root_module = exe.root_module,
-    });
+    while (walker.next() catch |err| {
+        @panic(@errorName(err));
+    }) |entry| {
+        if (entry.kind != .file) continue;
+        if (!std.mem.endsWith(u8, entry.path, ".tests.zig")) continue;
 
-    const run_exe_tests = b.addRunArtifact(exe_tests);
+        const full_path = std.fs.path.join(b.allocator, &.{ "e2e", entry.path }) catch |err| {
+            @panic(@errorName(err));
+        };
+        defer b.allocator.free(full_path);
 
-    const test_step = b.step("test", "Run tests");
-    test_step.dependOn(&run_mod_tests.step);
-    test_step.dependOn(&run_exe_tests.step);
+        const e2e_mod = b.createModule(.{
+            .root_source_file = b.path(full_path),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "relay", .module = mod },
+            },
+        });
 
+        const e2e_test = b.addTest(.{
+            .root_module = e2e_mod,
+        });
+
+        const run_e2e_test = b.addRunArtifact(e2e_test);
+        e2e_step.dependOn(&run_e2e_test.step);
+    }
 }
