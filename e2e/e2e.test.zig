@@ -27,9 +27,9 @@ fn ping() !void {
     var stream = try std.net.tcpConnectToHost(std.testing.allocator, "127.0.0.1", 19000);
     defer stream.close();
 
-    // var write_buf: [64]u8 = undefined;
-    // var writer = stream.writer(&write_buf);
-    // try writer.interface.writeAll("ping");
+    const stream_writer = stream.writer(&.{});
+    var writer = stream_writer.interface;
+    try writer.writeAll("ping");
 
     var stream_reader = stream.reader(&.{});
     const reader = stream_reader.interface();
