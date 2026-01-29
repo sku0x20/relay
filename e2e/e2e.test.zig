@@ -31,9 +31,9 @@ fn ping() !void {
     // var writer = stream.writer(&write_buf);
     // try writer.interface.writeAll("ping");
 
-    var read_buf: [64]u8 = undefined;
-    var stream_reader = stream.reader(&read_buf);
+    var stream_reader = stream.reader(&.{});
     const reader = stream_reader.interface();
-    try reader.readSliceAll(&read_buf);
-    try std.testing.expect(std.mem.eql(u8, &read_buf, "pong"));
+    var buf: [4]u8 = undefined;
+    try reader.readSliceAll(&buf);
+    try std.testing.expect(std.mem.eql(u8, &buf, "pong"));
 }
