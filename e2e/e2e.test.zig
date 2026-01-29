@@ -1,23 +1,13 @@
 const std = @import("std");
+const process_utils = @import("process_utils.zig");
 const tcp_utils = @import("tcp_utils.zig");
 
 test "e2e" {
     const exe_path = try std.process.getEnvVarOwned(std.testing.allocator, "RELAY_BIN");
     defer std.testing.allocator.free(exe_path);
 
-    var child = std.process.Child.init(&.{exe_path}, std.testing.allocator);
-    child.stdin_behavior = .Ignore;
-    child.stdout_behavior = .Inherit;
-    child.stderr_behavior = .Inherit;
-    try child.spawn();
-    defer {
-        _ = child.kill() catch |err| {
-            std.debug.print("e2e: kill failed: {s}\n", .{@errorName(err)});
-        };
-        _ = child.wait() catch |err| {
-            std.debug.print("e2e: wait failed: {s}\n", .{@errorName(err)});
-        };
-    }
+    var child = try process_utils.spawnRelay(exe_path);
+    defer process_utils.cleanup(&child);
 
     try tcp_utils.waitForPortOpen(
         std.testing.allocator,
