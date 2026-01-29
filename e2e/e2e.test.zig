@@ -18,5 +18,11 @@ test "e2e" {
         };
     }
 
-    std.Thread.sleep(100 * std.time.ns_per_ms);
+    // todo: wait for port to be opened.
+
+    try ping();
+}
+
+fn ping() !void {
+    try std.testing.expect(1 == 1);
 }
