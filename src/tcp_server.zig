@@ -6,6 +6,7 @@ const Server = std.net.Server;
 pub fn start(
     bind: []const u8,
     port: u16,
+    max_connections: usize,
     pool: *Thread.Pool,
 ) !void {
     const address = try std.net.Address.parseIp(bind, port);
@@ -14,14 +15,28 @@ pub fn start(
     });
     defer server.deinit();
 
+    var active_connections = std.atomic.Value(usize).init(0);
+
     while (true) {
         const connection = try server.accept();
-        try pool.spawn(errUtils.runCatching, .{ handleConnection, .{connection} });
+        const prev = active_connections.fetchAdd(1, .acq_rel);
+        if (prev >= max_connections) {
+            _ = active_connections.fetchSub(1, .acq_rel);
+            connection.stream.close();
+            continue;
+        }
+        try pool.spawn(errUtils.runCatching, .{ handleConnection, .{connection, &active_connections} });
     }
 }
 
-fn handleConnection(connection: Server.Connection) !void {
-    defer connection.stream.close();
+fn handleConnection(
+    connection: Server.Connection,
+    active_connections: *std.atomic.Value(usize),
+) !void {
+    defer {
+        connection.stream.close();
+        _ = active_connections.fetchSub(1, .acq_rel);
+    }
 
     var reader = connection.stream.reader(&.{});
     var buf: [4]u8 = undefined;

@@ -8,14 +8,17 @@ pub fn startRelay() !void {
 
     const allocator = gpa.allocator();
 
+    const concurrency = 1024;
+
     var pool: Thread.Pool = undefined;
     try pool.init(.{
         .allocator = allocator,
-        .n_jobs = 1,
+        .n_jobs = concurrency,
     });
     defer pool.deinit();
 
     const bind = "127.0.0.1";
     const port = 19000;
-    try tcpServer.start(bind, port, &pool);
+    const max_connections = concurrency;
+    try tcpServer.start(bind, port, max_connections, &pool);
 }
