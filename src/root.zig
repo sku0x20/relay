@@ -1,6 +1,7 @@
 const std = @import("std");
 const Server = std.net.Server;
 const Thread = std.Thread;
+const errUtils = @import("err_utils.zig");
 
 pub fn startRelay() !void {
     const address = try std.net.Address.parseIp("127.0.0.1", 19000);
@@ -28,9 +29,7 @@ pub fn startRelay() !void {
 }
 
 pub fn handleConnection(connection: Server.Connection) void {
-    run(connection) catch |err| {
-        std.log.err("err: {s}\n", .{@errorName(err)});
-    };
+    errUtils.runCatching(run, .{connection});
 }
 
 pub fn run(connection: Server.Connection) !void {
