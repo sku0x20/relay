@@ -24,15 +24,11 @@ pub fn startRelay() !void {
 
     while (true) {
         const connection = try server.accept();
-        try pool.spawn(handleConnection, .{connection});
+        try pool.spawn(errUtils.runCatching, .{ handleConnection, .{connection} });
     }
 }
 
-pub fn handleConnection(connection: Server.Connection) void {
-    errUtils.runCatching(run, .{connection});
-}
-
-pub fn run(connection: Server.Connection) !void {
+pub fn handleConnection(connection: Server.Connection) !void {
     defer connection.stream.close();
 
     var reader = connection.stream.reader(&.{});
