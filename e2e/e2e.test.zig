@@ -16,18 +16,18 @@ test "e2e" {
         2 * std.time.ns_per_s,
     );
 
-    try ping();
+    try pingMultiple();
 }
 
-fn ping() !void {
-    var stream = try std.net.tcpConnectToHost(std.testing.allocator, "127.0.0.1", 19000);
-    defer stream.close();
+fn pingMultiple() !void {
+    var client1 = try std.net.tcpConnectToHost(std.testing.allocator, "127.0.0.1", 19000);
+    defer client1.close();
 
-    var stream_writer = stream.writer(&.{});
-    try stream_writer.interface.writeAll("ping");
+    var c1_writer = client1.writer(&.{});
+    try c1_writer.interface.writeAll("ping");
 
-    var stream_reader = stream.reader(&.{});
-    var buf: [4]u8 = undefined;
-    try stream_reader.interface().readSliceAll(&buf);
-    try std.testing.expect(std.mem.eql(u8, &buf, "pong"));
+    var c1_reader = client1.reader(&.{});
+    var c1_buf: [4]u8 = undefined;
+    try c1_reader.interface().readSliceAll(&c1_buf);
+    try std.testing.expect(std.mem.eql(u8, &c1_buf, "pong"));
 }
