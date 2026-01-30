@@ -10,11 +10,11 @@ pub fn startRelay() !void {
 
     while (true) {
         const connection = try server.accept();
-        try handleConnection(&connection);
+        try handleConnection(connection);
     }
 }
 
-pub fn handleConnection(connection: *const Server.Connection) !void {
+pub fn handleConnection(connection: Server.Connection) !void {
     defer connection.stream.close();
 
     var reader = connection.stream.reader(&.{});
