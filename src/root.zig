@@ -4,12 +4,6 @@ const Thread = std.Thread;
 const errUtils = @import("err_utils.zig");
 
 pub fn startRelay() !void {
-    const address = try std.net.Address.parseIp("127.0.0.1", 19000);
-    var server = try std.net.Address.listen(address, .{
-        .reuse_address = true,
-    });
-    defer server.deinit();
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit(); // todo: check for leaks!
 
@@ -21,6 +15,12 @@ pub fn startRelay() !void {
         .n_jobs = 1,
     });
     defer pool.deinit();
+
+    const address = try std.net.Address.parseIp("127.0.0.1", 19000);
+    var server = try std.net.Address.listen(address, .{
+        .reuse_address = true,
+    });
+    defer server.deinit();
 
     while (true) {
         const connection = try server.accept();
