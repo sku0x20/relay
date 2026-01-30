@@ -34,11 +34,12 @@ fn pingMultiple() !void {
     const ping_count = 4;
     for (0..ping_count) |_| {
         try c1_writer.interface.writeAll("ping");
+        try c2_writer.interface.writeAll("ping");
+
         var c1_buf: [4]u8 = undefined;
         try c1_reader.interface().readSliceAll(&c1_buf);
         try std.testing.expect(std.mem.eql(u8, &c1_buf, "pong"));
 
-        try c2_writer.interface.writeAll("ping");
         var c2_buf: [4]u8 = undefined;
         try c2_reader.interface().readSliceAll(&c2_buf);
         try std.testing.expect(std.mem.eql(u8, &c2_buf, "pong"));
