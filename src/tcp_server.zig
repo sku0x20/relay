@@ -25,7 +25,7 @@ pub fn start(
             connection.stream.close();
             continue;
         }
-        try pool.spawn(errUtils.runCatching, .{ handleConnection, .{connection, &active_connections} });
+        try pool.spawn(errUtils.runCatching, .{ handleConnection, .{ connection, &active_connections } });
     }
 }
 
@@ -37,15 +37,16 @@ fn handleConnection(
         connection.stream.close();
         _ = active_connections.fetchSub(1, .acq_rel);
     }
-
     var reader = connection.stream.reader(&.{});
-    var buf: [4]u8 = undefined;
-    reader.interface().readSliceAll(&buf) catch |err| switch (err) {
-        error.EndOfStream => return,
-        else => return err,
-    };
-    if (!std.mem.eql(u8, &buf, "ping")) return;
-
     var stream_writer = connection.stream.writer(&.{});
-    try stream_writer.interface.writeAll("pong");
+
+    var buf: [4]u8 = undefined;
+    while (true) {
+        reader.interface().readSliceAll(&buf) catch |err| switch (err) {
+            error.EndOfStream => return,
+            else => return err,
+        };
+        if (!std.mem.eql(u8, &buf, "ping")) return;
+        try stream_writer.interface.writeAll("pong");
+    }
 }
