@@ -1,5 +1,6 @@
 const std = @import("std");
 const Server = std.net.Server;
+const Thread = std.Thread;
 
 pub fn startRelay() !void {
     const address = try std.net.Address.parseIp("127.0.0.1", 19000);
@@ -8,13 +9,31 @@ pub fn startRelay() !void {
     });
     defer server.deinit();
 
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit(); // todo: check for leaks!
+
+    const allocator = gpa.allocator();
+
+    var pool: Thread.Pool = undefined;
+    try pool.init(.{
+        .allocator = allocator,
+        .n_jobs = 1,
+    });
+    defer pool.deinit();
+
     while (true) {
         const connection = try server.accept();
-        try handleConnection(connection);
+        try pool.spawn(handleConnection, .{connection});
     }
 }
 
-pub fn handleConnection(connection: Server.Connection) !void {
+pub fn handleConnection(connection: Server.Connection) void {
+    run(connection) catch |err| {
+        std.log.err("err: {s}\n", .{@errorName(err)});
+    };
+}
+
+pub fn run(connection: Server.Connection) !void {
     defer connection.stream.close();
 
     var reader = connection.stream.reader(&.{});

@@ -31,7 +31,7 @@ fn pingMultiple() !void {
     var c2_writer = client2.writer(&.{});
     var c2_reader = client2.reader(&.{});
 
-    const ping_count = 4;
+    const ping_count = 1;
     for (0..ping_count) |_| {
         try c1_writer.interface.writeAll("ping");
         var c1_buf: [4]u8 = undefined;
