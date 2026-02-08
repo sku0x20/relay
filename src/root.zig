@@ -1,6 +1,7 @@
 const std = @import("std");
 const Thread = std.Thread;
 const tcpServer = @import("tcp_server.zig");
+const tcpServerKqueue = @import("tcp_server_kqueue.zig");
 
 pub fn startRelay() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -19,6 +20,8 @@ pub fn startRelay() !void {
 
     const bind = "127.0.0.1";
     const port = 19000;
-    const max_connections = concurrency;
-    try tcpServer.start(bind, port, max_connections, &pool);
+    // const max_connections = concurrency;
+    // try tcpServer.start(bind, port, max_connections, &pool);
+
+    try tcpServerKqueue.start(bind, port);
 }
