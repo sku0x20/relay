@@ -1,9 +1,12 @@
 const std = @import("std");
 const posix = std.posix;
+const Thread = std.Thread;
+const errUtils = @import("err_utils.zig");
 
 pub fn start(
     bind: []const u8,
     port: u16,
+    pool: *Thread.Pool,
 ) !void {
     const socket = try createSocket();
     const addr = try std.net.Ip4Address.resolveIp(bind, port);
@@ -11,16 +14,17 @@ pub fn start(
     try listen(socket);
     defer posix.close(socket);
 
-    var accepted_addr: std.net.Ip4Address = undefined;
+    while (true) {
+        var accepted_addr: std.net.Ip4Address = undefined;
+        const client_socket_fd = try posix.accept(
+            socket,
+            @ptrCast(&accepted_addr.sa),
+            @constCast(&accepted_addr.getOsSockLen()),
+            0,
+        );
 
-    const client_socket_fd = try posix.accept(
-        socket,
-        @ptrCast(&accepted_addr.sa),
-        @constCast(&accepted_addr.getOsSockLen()),
-        0,
-    );
-
-    try handleConnection(client_socket_fd, accepted_addr);
+        try pool.spawn(errUtils.runCatching, .{ handleConnection, .{ client_socket_fd, accepted_addr } });
+    }
 }
 
 fn handleConnection(
