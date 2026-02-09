@@ -9,8 +9,20 @@ pub fn start(
     const addr = try std.net.Ip4Address.resolveIp(bind, port);
     try bindSocket(socket, addr);
     try listen(socket);
-    // try posix.accept(socket, , addr_size: ?*u32, flags: u32)
-    posix.nanosleep(10000, 0);
+    // todo: defer close the server
+
+    var accepted_addr: std.net.Ip4Address = undefined;
+
+    const client_socket_fd = try posix.accept(
+        socket,
+        @ptrCast(&accepted_addr.sa),
+        @constCast(&accepted_addr.getOsSockLen()),
+        0,
+    );
+
+    var buf: [4]u8 = undefined;
+    const n = try posix.read(client_socket_fd, &buf);
+    _ = n;
 }
 
 fn createSocket() !posix.socket_t {
@@ -60,6 +72,6 @@ fn bindSocket(socket_fd: posix.socket_t, addr: std.net.Ip4Address) !void {
     );
 }
 
-fn listen(socket_fd: posix.socket_t) !void{
+fn listen(socket_fd: posix.socket_t) !void {
     try posix.listen(socket_fd, 10);
 }
