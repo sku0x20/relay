@@ -1,7 +1,7 @@
 const std = @import("std");
 const Thread = std.Thread;
 const tcpServer = @import("tcp_server.zig");
-const tcpServerKqueue = @import("tcp_server_kqueue.zig");
+const tcpServerPosix = @import("tcp_server_posix.zig");
 
 pub fn startRelay() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -23,5 +23,5 @@ pub fn startRelay() !void {
     // const max_connections = concurrency;
     // try tcpServer.start(bind, port, max_connections, &pool);
 
-    try tcpServerKqueue.start(bind, port);
+    try tcpServerPosix.start(bind, port);
 }
