@@ -30,6 +30,12 @@ pub fn start(
     const n = try posix.kevent(kq, changeList, &.{}, null);
     std.debug.assert(n == 0);
 
+    while (true) {
+        var eventList: [1]posix.Kevent = undefined;
+        const events = try posix.kevent(kq, &.{}, &eventList, null);
+        std.log.info("event = {}", .{events});
+    }
+
     //
     // while (true) {
     //     var accepted_addr: std.net.Ip4Address = undefined;
