@@ -35,15 +35,28 @@ fn handleConnection(
 
     _ = accepted_addr;
 
-    var buf: [4]u8 = undefined;
+    while (true) {
+        var buf: [4]u8 = undefined;
+        const n = posix.read(client_fd, &buf) catch |err| switch (err) {
+            error.ConnectionResetByPeer => return,
+            // add other errors;
+            // std/posix.zig:856
+            else => return err,
+        };
+        std.log.info("read = {}", .{n});
 
-    // todo: end of stream handling and other error handing
-    const n = try posix.read(client_fd, &buf);
-    std.log.info("read = {}", .{n});
+        // eof
+        if (n == 0) {
+            return;
+        }
 
-    const data = "pong";
-    const w = try posix.write(client_fd, data);
-    std.log.info("wrote = {}", .{w});
+        const chunk = buf[0..n];
+        _ = chunk;
+
+        const data = "pong";
+        const w = try posix.write(client_fd, data);
+        std.log.info("wrote = {}", .{w});
+    }
 }
 
 fn createSocket() !posix.socket_t {
