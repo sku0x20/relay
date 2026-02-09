@@ -1,5 +1,7 @@
 # Todo List
 
+- handle graceful shutdown
+
 - backpressure
   - adjusting the backpressure in listen
     - can stop accepting new connections if overloaded
