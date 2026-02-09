@@ -18,23 +18,41 @@ pub fn start(
     defer posix.close(socket);
 
     std.debug.assert(socket >= 0);
-    const event = posix.Kevent{
-        .ident = @as(usize, @intCast(socket)),
+    const fd_ident = @as(usize, @intCast(socket));
+    const listener_event = posix.Kevent{
+        .ident = fd_ident,
         .filter = std.c.EVFILT.READ,
         .flags = std.c.EV.ADD,
         .fflags = 0,
         .data = 0,
         .udata = 0,
     };
-    const changeList = &[_]posix.Kevent{event};
+    const changeList = &[_]posix.Kevent{listener_event};
     const n = try posix.kevent(kq, changeList, &.{}, null);
     std.debug.assert(n == 0);
+
+    // todo: use userdata as function callback;
+    // todo: optimizations; use the backlog returned in .data for accept connections in loop???
+    // { .{ .ident = 4, .filter = -1, .flags = 1, .fflags = 0, .data = 1, .udata = 0 } }
 
     while (true) {
         var eventList: [1]posix.Kevent = undefined;
         const events = try posix.kevent(kq, &.{}, &eventList, null);
         std.log.info("event = {}", .{events});
         std.log.info("event list = {any}", .{eventList});
+        const event: posix.Kevent = eventList[0];
+        // for now going with branching
+        if (event.ident == fd_ident) {
+            var accepted_addr: std.net.Ip4Address = undefined;
+
+            const client_socket_fd = try posix.accept(
+                socket,
+                @ptrCast(&accepted_addr.sa),
+                @constCast(&accepted_addr.getOsSockLen()),
+                posix.SOCK.NONBLOCK,
+            );
+            posix.close(client_socket_fd);
+        }
     }
 
     //
