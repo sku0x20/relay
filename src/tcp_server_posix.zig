@@ -80,7 +80,9 @@ fn createSocket() !posix.socket_t {
     // ipv4 tcp socket
     const socket_fd = try posix.socket(
         posix.AF.INET,
-        posix.SOCK.STREAM,
+        // is NONBLOCKING really required? Kqueue can work without this flag also
+        // what it will do is accept will return error.
+        posix.SOCK.STREAM | posix.SOCK.NONBLOCK,
         posix.IPPROTO.TCP,
     );
     errdefer posix.close(socket_fd);
