@@ -19,16 +19,26 @@ pub fn start(
         @constCast(&accepted_addr.getOsSockLen()),
         0,
     );
-    defer posix.close(client_socket_fd);
+
+    try handleConnection(client_socket_fd, accepted_addr);
+}
+
+fn handleConnection(
+    client_fd: posix.socket_t,
+    accepted_addr: std.net.Ip4Address,
+) !void {
+    defer posix.close(client_fd);
+
+    _ = accepted_addr;
 
     var buf: [4]u8 = undefined;
 
     // todo: end of stream handling and other error handing
-    const n = try posix.read(client_socket_fd, &buf);
+    const n = try posix.read(client_fd, &buf);
     std.log.info("read = {}", .{n});
 
     const data = "pong";
-    const w = try posix.write(client_socket_fd, data);
+    const w = try posix.write(client_fd, data);
     std.log.info("wrote = {}", .{w});
 }
 
