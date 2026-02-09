@@ -3,6 +3,8 @@ const posix = std.posix;
 const Thread = std.Thread;
 const errUtils = @import("err_utils.zig");
 
+// todo: use CLOEXEC flag wherever applicable
+
 pub fn start(
     bind: []const u8,
     port: u16,
@@ -20,7 +22,7 @@ pub fn start(
             socket,
             @ptrCast(&accepted_addr.sa),
             @constCast(&accepted_addr.getOsSockLen()),
-            0,
+            posix.SOCK.NONBLOCK,
         );
 
         try pool.spawn(errUtils.runCatching, .{ handleConnection, .{ client_socket_fd, accepted_addr } });
