@@ -106,7 +106,7 @@ fn createSocket() !posix.socket_t {
     const socket_fd = try posix.socket(
         posix.AF.INET,
         // is NONBLOCKING really required? Kqueue can work without this flag also
-        // what it will do is accept will return error.
+        // accept also no error??? idk!
         posix.SOCK.STREAM | posix.SOCK.NONBLOCK,
         posix.IPPROTO.TCP,
     );
