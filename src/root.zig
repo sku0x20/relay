@@ -24,5 +24,5 @@ pub fn startRelay() !void {
     // const max_connections = concurrency;
     // try tcpServer.start(bind, port, max_connections, &pool);
 
-    try tcpServerPosix.start(bind, port, &pool);
+    try tcpServerPosix.start(bind, port);
 }

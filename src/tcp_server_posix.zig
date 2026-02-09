@@ -8,25 +8,40 @@ const errUtils = @import("err_utils.zig");
 pub fn start(
     bind: []const u8,
     port: u16,
-    pool: *Thread.Pool,
 ) !void {
+    const kq = try posix.kqueue();
+
     const socket = try createSocket();
     const addr = try std.net.Ip4Address.resolveIp(bind, port);
     try bindSocket(socket, addr);
     try listen(socket);
     defer posix.close(socket);
 
-    while (true) {
-        var accepted_addr: std.net.Ip4Address = undefined;
-        const client_socket_fd = try posix.accept(
-            socket,
-            @ptrCast(&accepted_addr.sa),
-            @constCast(&accepted_addr.getOsSockLen()),
-            posix.SOCK.NONBLOCK,
-        );
+    std.debug.assert(socket >= 0);
+    const event = posix.Kevent{
+        .ident = @as(usize, @intCast(socket)),
+        .filter = std.c.EVFILT.READ,
+        .flags = std.c.EV.ADD,
+        .fflags = 0,
+        .data = 0,
+        .udata = 0,
+    };
+    const changeList = &[_]posix.Kevent{event};
+    const n = try posix.kevent(kq, changeList, &.{}, null);
+    std.debug.assert(n == 0);
 
-        try pool.spawn(errUtils.runCatching, .{ handleConnection, .{ client_socket_fd, accepted_addr } });
-    }
+    //
+    // while (true) {
+    //     var accepted_addr: std.net.Ip4Address = undefined;
+    //     const client_socket_fd = try posix.accept(
+    //         socket,
+    //         @ptrCast(&accepted_addr.sa),
+    //         @constCast(&accepted_addr.getOsSockLen()),
+    //         posix.SOCK.NONBLOCK,
+    //     );
+    //
+    //     try pool.spawn(errUtils.runCatching, .{ handleConnection, .{ client_socket_fd, accepted_addr } });
+    // }
 }
 
 fn handleConnection(
