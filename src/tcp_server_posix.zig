@@ -9,7 +9,7 @@ pub fn start(
     const addr = try std.net.Ip4Address.resolveIp(bind, port);
     try bindSocket(socket, addr);
     try listen(socket);
-    // todo: defer close the server
+    defer posix.close(socket);
 
     var accepted_addr: std.net.Ip4Address = undefined;
 
@@ -19,10 +19,17 @@ pub fn start(
         @constCast(&accepted_addr.getOsSockLen()),
         0,
     );
+    defer posix.close(client_socket_fd);
 
     var buf: [4]u8 = undefined;
+
+    // todo: end of stream handling and other error handing
     const n = try posix.read(client_socket_fd, &buf);
-    _ = n;
+    std.log.info("read = {}", .{n});
+
+    const data = "pong";
+    const w = try posix.write(client_socket_fd, data);
+    std.log.info("wrote = {}", .{w});
 }
 
 fn createSocket() !posix.socket_t {
