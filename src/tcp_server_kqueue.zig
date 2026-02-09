@@ -25,7 +25,8 @@ fn createSocket() !posix.socket_t {
         socket_fd,
         posix.SOL.SOCKET,
         posix.SO.REUSEADDR,
-        &[_]u8{1},
+        // the f8ck is this api!!
+        &std.mem.toBytes(@as(c_int, 1)),
     );
 
     // macOS: prevent SIGPIPE on write() to a closed peer
@@ -34,7 +35,7 @@ fn createSocket() !posix.socket_t {
         socket_fd,
         posix.SOL.SOCKET,
         posix.SO.NOSIGPIPE,
-        &[_]u8{1},
+        &std.mem.toBytes(@as(c_int, 1)),
     );
 
     // tcp options
@@ -42,7 +43,7 @@ fn createSocket() !posix.socket_t {
         socket_fd,
         posix.IPPROTO.TCP,
         posix.TCP.NODELAY,
-        &[_]u8{1},
+        &std.mem.toBytes(@as(c_int, 1)),
     );
 
     return socket_fd;
