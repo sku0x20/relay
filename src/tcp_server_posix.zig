@@ -34,6 +34,7 @@ pub fn start(
         var eventList: [1]posix.Kevent = undefined;
         const events = try posix.kevent(kq, &.{}, &eventList, null);
         std.log.info("event = {}", .{events});
+        std.log.info("event list = {any}", .{eventList});
     }
 
     //
