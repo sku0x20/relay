@@ -24,11 +24,11 @@ pub fn start(
     // { .{ .ident = 4, .filter = -1, .flags = 1, .fflags = 0, .data = 1, .udata = 0 } }
 
     const listener_ident = @as(usize, @intCast(socket));
+    var eventList: [1]posix.Kevent = undefined;
     while (true) {
-        var eventList: [1]posix.Kevent = undefined;
         const events = try posix.kevent(kq, &.{}, &eventList, null);
-        std.log.debug("events = {}, event list = {any}", .{ events, eventList });
         const event: posix.Kevent = eventList[0];
+        std.log.debug("events = {}, event list = {any}", .{ events, eventList });
         // for now going with branching
         if (event.ident == listener_ident) {
             try acceptConn(kq, event, socket);
