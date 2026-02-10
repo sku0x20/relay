@@ -109,7 +109,6 @@ fn processEvent(
     _ = event;
     var buf: [4]u8 = undefined;
     const n = try posix.read(client_fd, &buf);
-    std.log.info("read = {}", .{n});
 
     // eof
     if (n == 0) {
@@ -122,7 +121,7 @@ fn processEvent(
 
     const data = "pong";
     const w = try posix.write(client_fd, data);
-    std.log.info("wrote = {}", .{w});
+    _ = w;
 }
 
 fn handleConnection(
