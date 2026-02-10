@@ -54,7 +54,7 @@ pub fn start(
             try addConnectionToKq(kq, client_socket_fd);
         } else {
             const client_socket_fd = @as(posix.socket_t, @intCast(event.ident));
-            try handleRead(event, client_socket_fd);
+            handleClientEvent(event, client_socket_fd);
         }
     }
 }
@@ -75,24 +75,26 @@ fn addConnectionToKq(kq: i32, conn: posix.socket_t) !void {
     std.debug.assert(n == 0);
 }
 
-fn handleRead(
+fn handleClientEvent(
+    event: posix.Kevent,
+    client_fd: posix.socket_t,
+) void {
+    // in case of any error close the fd;
+    // so it gets remove from kqueue event listener
+    processEvent(event, client_fd) catch |err| {
+        // todo: handle errs explicitly
+        std.log.err("{s}", .{@errorName(err)});
+        posix.close(client_fd);
+    };
+}
+
+fn processEvent(
     event: posix.Kevent,
     client_fd: posix.socket_t,
 ) !void {
     _ = event;
     var buf: [4]u8 = undefined;
-    const n = posix.read(client_fd, &buf) catch |err| switch (err) {
-        error.ConnectionResetByPeer => {
-            posix.close(client_fd);
-            return;
-        },
-        // add other errors;
-        // std/posix.zig:856
-        else => {
-        std.log.err("{s}", .{@errorName(err)});
-        return;
-    },
-    };
+    const n = try posix.read(client_fd, &buf);
     std.log.info("read = {}", .{n});
 
     // eof
