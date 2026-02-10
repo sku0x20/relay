@@ -27,7 +27,7 @@ pub fn start(
     while (true) {
         var eventList: [1]posix.Kevent = undefined;
         const events = try posix.kevent(kq, &.{}, &eventList, null);
-        std.log.debug("evetns = {}, event list = {any}", .{ events, eventList });
+        std.log.debug("events = {}, event list = {any}", .{ events, eventList });
         const event: posix.Kevent = eventList[0];
         // for now going with branching
         if (event.ident == listener_ident) {
@@ -122,38 +122,6 @@ fn processEvent(
     const data = "pong";
     const w = try posix.write(client_fd, data);
     _ = w;
-}
-
-fn handleConnection(
-    client_fd: posix.socket_t,
-    accepted_addr: std.net.Ip4Address,
-) !void {
-    defer posix.close(client_fd);
-
-    _ = accepted_addr;
-
-    while (true) {
-        var buf: [4]u8 = undefined;
-        const n = posix.read(client_fd, &buf) catch |err| switch (err) {
-            error.ConnectionResetByPeer => return,
-            // add other errors;
-            // std/posix.zig:856
-            else => return err,
-        };
-        std.log.info("read = {}", .{n});
-
-        // eof
-        if (n == 0) {
-            return;
-        }
-
-        const chunk = buf[0..n];
-        _ = chunk;
-
-        const data = "pong";
-        const w = try posix.write(client_fd, data);
-        std.log.info("wrote = {}", .{w});
-    }
 }
 
 fn createSocket() !posix.socket_t {
