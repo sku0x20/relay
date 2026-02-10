@@ -9,7 +9,7 @@ pub fn startRelay() !void {
 
     const allocator = gpa.allocator();
 
-    const concurrency = 1;
+    const concurrency = 1024;
 
     var pool: Thread.Pool = undefined;
     try pool.init(.{
