@@ -18,9 +18,9 @@ pub fn start(
     defer posix.close(socket);
 
     std.debug.assert(socket >= 0);
-    const fd_ident = @as(usize, @intCast(socket));
+    const listener_ident = @as(usize, @intCast(socket));
     const listener_event = posix.Kevent{
-        .ident = fd_ident,
+        .ident = listener_ident,
         .filter = std.c.EVFILT.READ,
         .flags = std.c.EV.ADD,
         .fflags = 0,
@@ -42,7 +42,7 @@ pub fn start(
         std.log.info("event list = {any}", .{eventList});
         const event: posix.Kevent = eventList[0];
         // for now going with branching
-        if (event.ident == fd_ident) {
+        if (event.ident == listener_ident) {
             var accepted_addr: std.net.Ip4Address = undefined;
 
             const client_socket_fd = try posix.accept(
