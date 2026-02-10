@@ -52,27 +52,14 @@ pub fn start(
                 posix.SOCK.NONBLOCK,
             );
             try addConnectionToKq(kq, client_socket_fd);
+        } else {
+            const client_socket_fd = @as(posix.socket_t, @intCast(event.ident));
+            try handleRead(event, client_socket_fd);
         }
     }
-
-    //
-    // while (true) {
-    //     var accepted_addr: std.net.Ip4Address = undefined;
-    //     const client_socket_fd = try posix.accept(
-    //         socket,
-    //         @ptrCast(&accepted_addr.sa),
-    //         @constCast(&accepted_addr.getOsSockLen()),
-    //         posix.SOCK.NONBLOCK,
-    //     );
-    //
-    //     try pool.spawn(errUtils.runCatching, .{ handleConnection, .{ client_socket_fd, accepted_addr } });
-    // }
 }
 
-fn addConnectionToKq(
-    kq: i32,
-    conn: posix.socket_t
-)!void{
+fn addConnectionToKq(kq: i32, conn: posix.socket_t) !void {
     std.debug.assert(conn >= 0);
     const conn_ident = @as(usize, @intCast(conn));
     const conn_event = posix.Kevent{
@@ -86,6 +73,40 @@ fn addConnectionToKq(
     const changeList = &[_]posix.Kevent{conn_event};
     const n = try posix.kevent(kq, changeList, &.{}, null);
     std.debug.assert(n == 0);
+}
+
+fn handleRead(
+    event: posix.Kevent,
+    client_fd: posix.socket_t,
+) !void {
+    _ = event;
+    var buf: [4]u8 = undefined;
+    const n = posix.read(client_fd, &buf) catch |err| switch (err) {
+        error.ConnectionResetByPeer => {
+            posix.close(client_fd);
+            return;
+        },
+        // add other errors;
+        // std/posix.zig:856
+        else => {
+        std.log.err("{s}", .{@errorName(err)});
+        return;
+    },
+    };
+    std.log.info("read = {}", .{n});
+
+    // eof
+    if (n == 0) {
+        posix.close(client_fd);
+        return;
+    }
+
+    const chunk = buf[0..n];
+    _ = chunk;
+
+    const data = "pong";
+    const w = try posix.write(client_fd, data);
+    std.log.info("wrote = {}", .{w});
 }
 
 fn handleConnection(
