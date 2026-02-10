@@ -31,20 +31,30 @@ pub fn start(
         const event: posix.Kevent = eventList[0];
         // for now going with branching
         if (event.ident == listener_ident) {
-            var accepted_addr: std.net.Ip4Address = undefined;
-
-            const client_socket_fd = try posix.accept(
-                socket,
-                @ptrCast(&accepted_addr.sa),
-                @constCast(&accepted_addr.getOsSockLen()),
-                posix.SOCK.NONBLOCK,
-            );
-            try addConnectionToKq(kq, client_socket_fd);
+            try acceptConn(kq, event, socket);
         } else {
             const client_socket_fd = @as(posix.socket_t, @intCast(event.ident));
             handleClientEvent(event, client_socket_fd);
         }
     }
+}
+
+// todo: in case of accept failure close this socket; and reinitiate the socket;
+fn acceptConn(
+    kq: i32,
+    event: posix.Kevent,
+    socket: posix.socket_t,
+) !void {
+    _ = event;
+    var accepted_addr: std.net.Ip4Address = undefined;
+
+    const client_socket_fd = try posix.accept(
+        socket,
+        @ptrCast(&accepted_addr.sa),
+        @constCast(&accepted_addr.getOsSockLen()),
+        posix.SOCK.NONBLOCK,
+    );
+    try addConnectionToKq(kq, client_socket_fd);
 }
 
 fn addListenerToKq(kq: i32, socket: posix.socket_t) !void {
@@ -84,7 +94,7 @@ fn handleClientEvent(
     client_fd: posix.socket_t,
 ) void {
     // in case of any error close the fd;
-    // so it gets remove from kqueue event listener
+    // so its removed from kqueue event listener
     processEvent(event, client_fd) catch |err| {
         // todo: handle errs explicitly
         std.log.err("{s}", .{@errorName(err)});
