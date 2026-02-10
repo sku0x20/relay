@@ -28,7 +28,8 @@ pub fn start(
     while (true) {
         const events = try posix.kevent(kq, &.{}, &eventList, null);
         const event: posix.Kevent = eventList[0];
-        std.log.debug("events = {}, event list = {any}", .{ events, eventList });
+        _ = events;
+        // std.log.debug("events = {}, event list = {any}", .{ events, eventList });
         // for now going with branching
         if (event.ident == listener_ident) {
             try acceptConn(kq, event, socket);
