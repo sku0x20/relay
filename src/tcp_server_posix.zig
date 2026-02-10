@@ -51,7 +51,7 @@ pub fn start(
                 @constCast(&accepted_addr.getOsSockLen()),
                 posix.SOCK.NONBLOCK,
             );
-            posix.close(client_socket_fd);
+            try addConnectionToKq(kq, client_socket_fd);
         }
     }
 
@@ -67,6 +67,25 @@ pub fn start(
     //
     //     try pool.spawn(errUtils.runCatching, .{ handleConnection, .{ client_socket_fd, accepted_addr } });
     // }
+}
+
+fn addConnectionToKq(
+    kq: i32,
+    conn: posix.socket_t
+)!void{
+    std.debug.assert(conn >= 0);
+    const conn_ident = @as(usize, @intCast(conn));
+    const conn_event = posix.Kevent{
+        .ident = conn_ident,
+        .filter = std.c.EVFILT.READ,
+        .flags = std.c.EV.ADD,
+        .fflags = 0,
+        .data = 0,
+        .udata = 0,
+    };
+    const changeList = &[_]posix.Kevent{conn_event};
+    const n = try posix.kevent(kq, changeList, &.{}, null);
+    std.debug.assert(n == 0);
 }
 
 fn handleConnection(
