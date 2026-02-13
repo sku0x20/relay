@@ -147,6 +147,7 @@ fn createSocket() !posix.socket_t {
 
     // macOS: prevent SIGPIPE on write() to a closed peer
     // get error instead of process signal termination.
+    // todo: put mac os flag!
     try posix.setsockopt(
         socket_fd,
         posix.SOL.SOCKET,

@@ -1,5 +1,6 @@
 # Todo List
 
+- enable keepalive
 - handle graceful shutdown
 
 - backpressure
