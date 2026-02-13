@@ -1,0 +1,10 @@
+services:
+  dev:
+    # todo: use custom dev image rather than prebuild
+    #    build:
+    #      context: .
+    #      dockerfile: Dockerfile.dev
+    image: kassany/alpine-ziglang:0.15.1
+    volumes:
+      - .:/app
+    command: sleep infinity
