@@ -1,4 +1,5 @@
 const std = @import("std");
+const buildin = @import("builtin");
 const posix = std.posix;
 const Thread = std.Thread;
 const errUtils = @import("err_utils.zig");
@@ -145,15 +146,16 @@ fn createSocket() !posix.socket_t {
         &std.mem.toBytes(@as(c_int, 1)),
     );
 
-    // macOS: prevent SIGPIPE on write() to a closed peer
-    // get error instead of process signal termination.
-    // todo: put mac os flag!
-    try posix.setsockopt(
-        socket_fd,
-        posix.SOL.SOCKET,
-        posix.SO.NOSIGPIPE,
-        &std.mem.toBytes(@as(c_int, 1)),
-    );
+    if (buildin.os.tag == .macos) {
+        // macOS: prevent SIGPIPE on write() to a closed peer
+        // get error instead of process signal termination.
+        try posix.setsockopt(
+            socket_fd,
+            posix.SOL.SOCKET,
+            posix.SO.NOSIGPIPE,
+            &std.mem.toBytes(@as(c_int, 1)),
+        );
+    }
 
     // tcp options
     try posix.setsockopt(
