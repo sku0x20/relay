@@ -1,0 +1,8 @@
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: linux.dev.Dockerfile
+    volumes:
+      - .:/app
+    command: sleep infinity
