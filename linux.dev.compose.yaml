@@ -5,6 +5,6 @@ services:
       dockerfile: linux.dev.Dockerfile
     volumes:
       - .:/app
-    ports:
-      - "19000:19000"
+      - /app/.zig-cache
+      - /app/zig-out
     command: sleep infinity
