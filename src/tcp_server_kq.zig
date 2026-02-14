@@ -10,6 +10,7 @@ pub fn start(
     bind: []const u8,
     port: u16,
 ) !void {
+    // todo: defer close kq
     const kq = try posix.kqueue();
 
     const socket = try createSocket();
