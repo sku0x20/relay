@@ -7,6 +7,7 @@ const buildin = @import("builtin");
 //    else => @compileError("Unsupported OS"),
 //};
 const tcpServerKq = @import("tcp_server_kq.zig");
+const tcpServerEpoll = @import("tcp_server_epoll.zig");
 
 pub fn startRelay() !void {
     const bind = "127.0.0.1";
@@ -14,6 +15,7 @@ pub fn startRelay() !void {
 
     switch (buildin.os.tag) {
         .freebsd, .macos => try tcpServerKq.start(bind, port),
+        .linux => try tcpServerEpoll.start(bind, port),
         else => std.log.warn("platform not available", .{}),
     }
 }
