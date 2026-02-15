@@ -9,6 +9,26 @@ pub fn build(b: *std.Build) !void {
     addRunStep(b, exe);
     const e2e_tests = addE2eTests(b, target, optimize);
     addE2eRunStep(b, e2e_tests);
+
+    const testStep = addTestStep(b);
+    addTests(b, testStep, target, optimize);
+}
+
+fn addTestStep(b: *std.Build) *std.Build.Step {
+    const testStep = b.step("test", "Run tests in test");
+    return testStep;
+}
+
+fn addTests(
+    b: *std.Build,
+    step: *std.Build.Step,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) void {
+    _ = b;
+    _ = step;
+    _ = target;
+    _ = optimize;
 }
 
 fn addExecutable(
