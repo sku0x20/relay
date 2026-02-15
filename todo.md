@@ -1,7 +1,11 @@
 # Todo List
 
-- enable keepalive
 - handle SIGPIPE
+  - set MSG_NOSIGNAL on write/send.
+    - close connection on EPIPE
+    - https://man.freebsd.org/cgi/man.cgi?query=socket&apropos=0&sektion=2&manpath=FreeBSD+15.0-RELEASE+and+Ports&format=html
+    - https://man7.org/linux/man-pages/man7/socket.7.html
+- enable keepalive
 - handle graceful shutdown
 
 - backpressure
