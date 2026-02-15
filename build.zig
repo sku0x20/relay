@@ -23,7 +23,10 @@ fn addTests(
     b: *std.Build,
     step: *std.Build.Step,
 ) void {
-    var dir = b.build_root.handle.openDir("test", .{}) catch |err| {
+    var dir = b.build_root.handle.openDir("test", .{
+        .iterate = true,
+        .no_follow = true,
+    }) catch |err| {
         std.debug.print("Failed to open 'test': {} \n", .{err});
         return;
     };
