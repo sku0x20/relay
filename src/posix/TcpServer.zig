@@ -5,14 +5,18 @@ _port: u16,
 
 pub fn init(
     bind: []const u8,
-    port: u16,
+    p: u16,
 ) TcpServer {
     return .{
         ._bind = bind,
-        ._port = port,
+        ._port = p,
     };
 }
 
 pub fn start(self: *const TcpServer) !void {
     _ = self;
+}
+
+pub fn port(self: *const TcpServer) u16 {
+    return self._port;
 }

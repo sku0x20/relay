@@ -8,6 +8,8 @@ test "passing" {
 test "acceptConnections" {
     const server = TcpServer.init("127.0.0.1", 0);
     try server.start();
+    const port = server.port();
+    std.debug.print("{}", .{port});
 }
 
 // create the server
