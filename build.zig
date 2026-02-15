@@ -11,7 +11,7 @@ pub fn build(b: *std.Build) !void {
     addE2eRunStep(b, e2e_tests);
 
     const testStep = addTestStep(b);
-    addTests(b, testStep, target, optimize);
+    addTests(b, testStep);
 }
 
 fn addTestStep(b: *std.Build) *std.Build.Step {
@@ -22,13 +22,45 @@ fn addTestStep(b: *std.Build) *std.Build.Step {
 fn addTests(
     b: *std.Build,
     step: *std.Build.Step,
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
 ) void {
-    _ = b;
-    _ = step;
-    _ = target;
-    _ = optimize;
+    var dir = b.build_root.handle.openDir("test", .{}) catch |err| {
+        std.debug.print("Failed to open 'test': {} \n", .{err});
+        return;
+    };
+    defer dir.close();
+
+    var walker = dir.walk(b.allocator) catch |err| {
+        std.debug.print("Failed walker for 'test': {} \n", .{err});
+        return;
+    };
+    defer walker.deinit();
+
+    while (walker.next() catch null) |entry| {
+        createTest(b, step, &entry);
+    }
+}
+
+fn createTest(
+    b: *std.Build,
+    step: *std.Build.Step,
+    entry: *const std.fs.Dir.Walker.Entry,
+) void {
+    if (entry.kind != .file and !std.mem.endsWith(u8, entry.path, ".test.zig")) {
+        return;
+    }
+
+    const path = b.pathJoin(&.{ "test", entry.path });
+    const t = b.addTest(.{
+        .name = entry.basename,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(path),
+            .target = b.graph.host,
+            .optimize = .Debug,
+        }),
+    });
+
+    const runT = b.addRunArtifact(t);
+    step.dependOn(&runT.step);
 }
 
 fn addExecutable(
