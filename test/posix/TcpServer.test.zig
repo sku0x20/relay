@@ -5,6 +5,11 @@ test "passing" {
     try std.testing.expect(1 == 1);
 }
 
+test "acceptConnections" {
+    const server = TcpServer.init("127.0.0.1", 0);
+    try server.start();
+}
+
 // create the server
 // startListening
 // get port
