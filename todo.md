@@ -1,6 +1,7 @@
 # Todo List
 
 - enable keepalive
+- handle SIGPIPE
 - handle graceful shutdown
 
 - backpressure
