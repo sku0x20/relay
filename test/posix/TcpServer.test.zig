@@ -10,6 +10,8 @@ test "acceptConnections" {
     try server.start();
     const port = server.port();
     std.debug.print("{}", .{port});
+    const client = try std.net.tcpConnectToHost(std.testing.allocator, "127.0.0.1", port);
+    std.debug.print("{}", .{client});
 }
 
 // create the server
