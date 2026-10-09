@@ -27,6 +27,8 @@ fn addExecutable(
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = optimize,
+            // std.c bindings need libc on linux (always linked on darwin)
+            .link_libc = true,
         }),
     });
 }
@@ -55,6 +57,8 @@ fn addTests(
             .root_source_file = b.path(root),
             .target = target,
             .optimize = optimize,
+            // std.c bindings need libc on linux (always linked on darwin)
+            .link_libc = true,
         }),
     });
 }

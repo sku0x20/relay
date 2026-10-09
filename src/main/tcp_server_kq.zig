@@ -1,23 +1,23 @@
 const std = @import("std");
 const buildin = @import("builtin");
-const posix = std.posix;
+const sys = @import("sys.zig");
 const Thread = std.Thread;
 const errUtils = @import("err_utils.zig");
 
 // todo: use CLOEXEC flag wherever applicable
 
 pub fn start(
-    bind: []const u8,
+    bind: [:0]const u8,
     port: u16,
 ) !void {
     // todo: defer close kq
-    const kq = try posix.kqueue();
+    const kq = try sys.kqueue();
 
     const socket = try createSocket();
-    const addr = try std.net.Ip4Address.resolveIp(bind, port);
-    try bindSocket(socket, addr);
+    const addr = try sys.ip4(bind, port);
+    try bindSocket(socket, &addr);
     try listen(socket);
-    defer posix.close(socket);
+    defer sys.close(socket);
 
     try addListenerToKq(kq, socket);
 
@@ -26,17 +26,17 @@ pub fn start(
     // { .{ .ident = 4, .filter = -1, .flags = 1, .fflags = 0, .data = 1, .udata = 0 } }
 
     const listener_ident = @as(usize, @intCast(socket));
-    var eventList: [1]posix.Kevent = undefined;
+    var eventList: [1]sys.Kevent = undefined;
     while (true) {
-        const events = try posix.kevent(kq, &.{}, &eventList, null);
-        const event: posix.Kevent = eventList[0];
+        const events = try sys.kevent(kq, &.{}, &eventList, null);
+        const event: sys.Kevent = eventList[0];
         _ = events;
         // std.log.debug("events = {}, event list = {any}", .{ events, eventList });
         // for now going with branching
         if (event.ident == listener_ident) {
             try acceptConn(kq, event, socket);
         } else {
-            const client_socket_fd = @as(posix.socket_t, @intCast(event.ident));
+            const client_socket_fd = @as(sys.fd_t, @intCast(event.ident));
             handleClientEvent(event, client_socket_fd);
         }
     }
@@ -45,77 +45,70 @@ pub fn start(
 // todo: in case of accept failure close this socket; and reinitiate the socket;
 fn acceptConn(
     kq: i32,
-    event: posix.Kevent,
-    socket: posix.socket_t,
+    event: sys.Kevent,
+    socket: sys.fd_t,
 ) !void {
     _ = event;
-    var accepted_addr: std.net.Ip4Address = undefined;
-
-    const client_socket_fd = try posix.accept(
-        socket,
-        @ptrCast(&accepted_addr.sa),
-        @constCast(&accepted_addr.getOsSockLen()),
-        posix.SOCK.NONBLOCK,
-    );
+    const client_socket_fd = try sys.accept(socket, sys.SOCK.NONBLOCK);
     try addConnectionToKq(kq, client_socket_fd);
 }
 
-fn addListenerToKq(kq: i32, socket: posix.socket_t) !void {
+fn addListenerToKq(kq: i32, socket: sys.fd_t) !void {
     std.debug.assert(socket >= 0);
     const listener_ident = @as(usize, @intCast(socket));
-    const listener_event = posix.Kevent{
+    const listener_event = sys.Kevent{
         .ident = listener_ident,
-        .filter = std.c.EVFILT.READ,
-        .flags = std.c.EV.ADD,
+        .filter = sys.EVFILT.READ,
+        .flags = sys.EV.ADD,
         .fflags = 0,
         .data = 0,
         .udata = 0,
     };
-    const changeList = &[_]posix.Kevent{listener_event};
-    const n = try posix.kevent(kq, changeList, &.{}, null);
+    const changeList = &[_]sys.Kevent{listener_event};
+    const n = try sys.kevent(kq, changeList, &.{}, null);
     std.debug.assert(n == 0);
 }
 
-fn addConnectionToKq(kq: i32, conn: posix.socket_t) !void {
+fn addConnectionToKq(kq: i32, conn: sys.fd_t) !void {
     std.debug.assert(conn >= 0);
     const conn_ident = @as(usize, @intCast(conn));
-    const conn_event = posix.Kevent{
+    const conn_event = sys.Kevent{
         .ident = conn_ident,
-        .filter = std.c.EVFILT.READ,
-        .flags = std.c.EV.ADD,
+        .filter = sys.EVFILT.READ,
+        .flags = sys.EV.ADD,
         .fflags = 0,
         .data = 0,
         .udata = 0,
     };
-    const changeList = &[_]posix.Kevent{conn_event};
-    const n = try posix.kevent(kq, changeList, &.{}, null);
+    const changeList = &[_]sys.Kevent{conn_event};
+    const n = try sys.kevent(kq, changeList, &.{}, null);
     std.debug.assert(n == 0);
 }
 
 fn handleClientEvent(
-    event: posix.Kevent,
-    client_fd: posix.socket_t,
+    event: sys.Kevent,
+    client_fd: sys.fd_t,
 ) void {
     // in case of any error close the fd;
     // so its removed from kqueue event listener
     processEvent(event, client_fd) catch |err| {
         // todo: handle errs explicitly
         std.log.err("{s}", .{@errorName(err)});
-        posix.close(client_fd);
+        sys.close(client_fd);
     };
 }
 
 fn processEvent(
-    event: posix.Kevent,
-    client_fd: posix.socket_t,
+    event: sys.Kevent,
+    client_fd: sys.fd_t,
 ) !void {
     _ = event;
     var buf: [4]u8 = undefined;
-    const n = try posix.read(client_fd, &buf);
+    const n = try sys.read(client_fd, &buf);
 
     // eof
     if (n == 0) {
-        posix.close(client_fd);
+        sys.close(client_fd);
         return;
     }
 
@@ -123,61 +116,40 @@ fn processEvent(
     _ = chunk;
 
     const data = "pong";
-    const w = try posix.write(client_fd, data);
+    const w = try sys.write(client_fd, data);
     _ = w;
 }
 
-fn createSocket() !posix.socket_t {
+fn createSocket() !sys.fd_t {
     // ipv4 tcp socket
-    const socket_fd = try posix.socket(
-        posix.AF.INET,
+    const socket_fd = try sys.socket(
+        sys.AF.INET,
         // is NONBLOCKING really required? Kqueue can work without this flag also
         // accept also no error??? idk!
-        posix.SOCK.STREAM | posix.SOCK.NONBLOCK,
-        posix.IPPROTO.TCP,
+        sys.SOCK.STREAM | sys.SOCK.NONBLOCK,
+        sys.IPPROTO.TCP,
     );
-    errdefer posix.close(socket_fd);
+    errdefer sys.close(socket_fd);
 
     // socket options
-    try posix.setsockopt(
-        socket_fd,
-        posix.SOL.SOCKET,
-        posix.SO.REUSEADDR,
-        // the f8ck is this api!!
-        &std.mem.toBytes(@as(c_int, 1)),
-    );
+    try sys.setsockoptInt(socket_fd, sys.SOL.SOCKET, sys.SO.REUSEADDR, 1);
 
     if (buildin.os.tag == .macos) {
         // macOS: prevent SIGPIPE on write() to a closed peer
         // get error instead of process signal termination.
-        try posix.setsockopt(
-            socket_fd,
-            posix.SOL.SOCKET,
-            posix.SO.NOSIGPIPE,
-            &std.mem.toBytes(@as(c_int, 1)),
-        );
+        try sys.setsockoptInt(socket_fd, sys.SOL.SOCKET, sys.SO.NOSIGPIPE, 1);
     }
 
     // tcp options
-    try posix.setsockopt(
-        socket_fd,
-        posix.IPPROTO.TCP,
-        posix.TCP.NODELAY,
-        &std.mem.toBytes(@as(c_int, 1)),
-    );
+    try sys.setsockoptInt(socket_fd, sys.IPPROTO.TCP, sys.TCP.NODELAY, 1);
 
     return socket_fd;
 }
 
-fn bindSocket(socket_fd: posix.socket_t, addr: std.net.Ip4Address) !void {
-    try posix.bind(
-        socket_fd,
-        // since in is more specific in a way implementation; this works
-        @ptrCast(&(addr.sa)),
-        addr.getOsSockLen(),
-    );
+fn bindSocket(socket_fd: sys.fd_t, addr: *const sys.sockaddr_in) !void {
+    try sys.bind(socket_fd, addr);
 }
 
-fn listen(socket_fd: posix.socket_t) !void {
-    try posix.listen(socket_fd, 10);
+fn listen(socket_fd: sys.fd_t) !void {
+    try sys.listen(socket_fd, 10);
 }
