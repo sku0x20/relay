@@ -1,19 +1,33 @@
 const std = @import("std");
+const c = std.c;
 
-pub fn spawnRelay(allocator: std.mem.Allocator, exe_path: []const u8) !std.process.Child {
-    var child = std.process.Child.init(&.{exe_path}, allocator);
-    child.stdin_behavior = .Ignore;
-    child.stdout_behavior = .Inherit;
-    child.stderr_behavior = .Inherit;
-    try child.spawn();
-    return child;
+// declared here since std.c only exposes posix_spawn on darwin
+extern "c" fn posix_spawn(
+    pid: *c.pid_t,
+    path: [*:0]const u8,
+    file_actions: ?*const anyopaque,
+    attrp: ?*const anyopaque,
+    argv: [*:null]const ?[*:0]const u8,
+    envp: [*:null]const ?[*:0]const u8,
+) c_int;
+
+/// child inherits stdin/stdout/stderr and the environment
+pub fn spawnRelay(exe_path: [:0]const u8) !c.pid_t {
+    var pid: c.pid_t = undefined;
+    const argv = [_:null]?[*:0]const u8{exe_path.ptr};
+    const rc = posix_spawn(&pid, exe_path.ptr, null, null, &argv, @ptrCast(c.environ));
+    if (rc != 0) {
+        std.debug.print("e2e: posix_spawn failed: errno {d}\n", .{rc});
+        return error.SpawnFailed;
+    }
+    return pid;
 }
 
-pub fn cleanup(child: *std.process.Child) void {
-    _ = child.kill() catch |err| {
-        std.debug.print("e2e: kill failed: {s}\n", .{@errorName(err)});
-    };
-    _ = child.wait() catch |err| {
-        std.debug.print("e2e: wait failed: {s}\n", .{@errorName(err)});
-    };
+pub fn cleanup(pid: c.pid_t) void {
+    if (c.kill(pid, c.SIG.TERM) == -1) {
+        std.debug.print("e2e: kill failed: {any}\n", .{c.errno(@as(c_int, -1))});
+    }
+    if (c.waitpid(pid, null, 0) == -1) {
+        std.debug.print("e2e: wait failed: {any}\n", .{c.errno(@as(c_int, -1))});
+    }
 }
