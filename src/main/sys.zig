@@ -101,7 +101,8 @@ pub fn listen(fd: fd_t, backlog: u32) Error!void {
 }
 
 pub fn connect(fd: fd_t, addr: *const sockaddr_in) Error!void {
-    _ = try checkRetry(c.connect, .{ fd, @as(*const c.sockaddr, @ptrCast(addr)), @as(c.socklen_t, @sizeOf(sockaddr_in)) });
+    // not retried on EINTR: the connect keeps going in the background
+    _ = try check(c.connect(fd, @ptrCast(addr), @sizeOf(sockaddr_in)));
 }
 
 pub fn getsockname(fd: fd_t) Error!sockaddr_in {
