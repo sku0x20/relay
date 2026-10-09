@@ -1,3 +1,3 @@
 test {
-    _ = @import("test/all.zig");
+    _ = @import("test/0_all.zig");
 }

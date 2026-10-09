@@ -1,3 +1,3 @@
 test {
-    _ = @import("e2e/all.zig");
+    _ = @import("e2e/0_all.zig");
 }
