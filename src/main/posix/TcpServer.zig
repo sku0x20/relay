@@ -1,15 +1,14 @@
 const std = @import("std");
-const buildin = @import("buildin");
-const posix = std.posix;
+const sys = @import("../sys.zig");
 
 const TcpServer = @This();
 
-_bind: []const u8,
+_bind: [:0]const u8,
 _port: u16,
-_socket: posix.socket_t = undefined,
+_socket: sys.fd_t = undefined,
 
 pub fn init(
-    bind: []const u8,
+    bind: [:0]const u8,
     p: u16,
 ) TcpServer {
     return .{
@@ -18,7 +17,7 @@ pub fn init(
     };
 }
 
-pub fn start(self: *const TcpServer) !void {
+pub fn start(self: *TcpServer) !void {
     self._socket = try createSocket();
 }
 
@@ -26,31 +25,20 @@ pub fn port(self: *const TcpServer) u16 {
     return self._port;
 }
 
-fn createSocket() !posix.socket_t {
+fn createSocket() !sys.fd_t {
     // ipv4 tcp socket
-    const socket_fd = try posix.socket(
-        posix.AF.INET,
-        posix.SOCK.STREAM | posix.SOCK.NONBLOCK | posix.SOCK.CLOEXEC,
-        posix.IPPROTO.TCP,
+    const socket_fd = try sys.socket(
+        sys.AF.INET,
+        sys.SOCK.STREAM | sys.SOCK.NONBLOCK | sys.SOCK.CLOEXEC,
+        sys.IPPROTO.TCP,
     );
-    errdefer posix.close(socket_fd);
+    errdefer sys.close(socket_fd);
 
     // socket options
-    try posix.setsockopt(
-        socket_fd,
-        posix.SOL.SOCKET,
-        posix.SO.REUSEADDR,
-        // the f8ck is this api!!
-        &std.mem.toBytes(@as(c_int, 1)),
-    );
+    try sys.setsockoptInt(socket_fd, sys.SOL.SOCKET, sys.SO.REUSEADDR, 1);
 
     // tcp options
-    try posix.setsockopt(
-        socket_fd,
-        posix.IPPROTO.TCP,
-        posix.TCP.NODELAY,
-        &std.mem.toBytes(@as(c_int, 1)),
-    );
+    try sys.setsockoptInt(socket_fd, sys.IPPROTO.TCP, sys.TCP.NODELAY, 1);
 
     return socket_fd;
 }

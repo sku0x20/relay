@@ -1,4 +1,5 @@
 const std = @import("std");
+const sys = @import("../../main/sys.zig");
 const TcpServer = @import("../../main/posix/TcpServer.zig");
 
 test "passing" {
@@ -6,11 +7,14 @@ test "passing" {
 }
 
 test "acceptConnections" {
-    const server = TcpServer.init("127.0.0.1", 0);
+    var server = TcpServer.init("127.0.0.1", 0);
     try server.start();
     const port = server.port();
     std.debug.print("{}", .{port});
-    const client = try std.net.tcpConnectToHost(std.testing.allocator, "127.0.0.1", port);
+    const client = try sys.socket(sys.AF.INET, sys.SOCK.STREAM, sys.IPPROTO.TCP);
+    defer sys.close(client);
+    const addr = try sys.ip4("127.0.0.1", port);
+    try sys.connect(client, &addr);
     std.debug.print("{}", .{client});
 }
 
