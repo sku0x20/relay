@@ -32,6 +32,11 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+
+    const e2e_options = b.addOptions();
+    e2e_options.addOptionPath("relay_exe", exe.getEmittedBin());
+    e2e_tests.root_module.addOptions("build_options", e2e_options);
+
     const run_e2e = b.addRunArtifact(e2e_tests);
 
     const e2e_step = b.step("e2e", "Run end-to-end tests");
