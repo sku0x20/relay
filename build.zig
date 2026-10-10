@@ -1,9 +1,11 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
+    // --- Options ---
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // --- Executable ---
     const exe = b.addExecutable(.{
         .name = "relay",
         .root_module = b.createModule(.{
@@ -14,6 +16,7 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(exe);
 
+    // --- Run ---
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| run_cmd.addArgs(args);
@@ -21,6 +24,7 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run relay");
     run_step.dependOn(&run_cmd.step);
 
+    // --- E2E tests ---
     const e2e_tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/e2e.test.zig"),
