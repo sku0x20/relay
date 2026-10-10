@@ -27,16 +27,13 @@ pub const Timespec = extern struct {
     nsec: c_long,
 };
 
-pub const EVFILT = struct {
-    pub const USER: i16 = -10;
-};
-
 pub const EV = struct {
-    pub const ADD: u16 = 0x0001;
+    pub const ADD: u16 = 0x0001; // EV_ADD
 };
 
-pub const NOTE = struct {
-    pub const TRIGGER: u32 = 0x01000000;
+pub const USER = struct {
+    pub const FILTER: i16 = -10; // EVFILT_USER
+    pub const TRIGGER: u32 = 0x01000000; // NOTE_TRIGGER
 };
 
 // --- Errors ---

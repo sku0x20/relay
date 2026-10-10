@@ -20,7 +20,7 @@ test "delivers a triggered user event" {
 
     const add = [_]sys.Kevent{.{
         .ident = 7,
-        .filter = sys.EVFILT.USER,
+        .filter = sys.USER.FILTER,
         .flags = sys.EV.ADD,
         .fflags = 0,
         .data = 0,
@@ -32,9 +32,9 @@ test "delivers a triggered user event" {
 
     const trigger = [_]sys.Kevent{.{
         .ident = 7,
-        .filter = sys.EVFILT.USER,
+        .filter = sys.USER.FILTER,
         .flags = 0,
-        .fflags = sys.NOTE.TRIGGER,
+        .fflags = sys.USER.TRIGGER,
         .data = 0,
         .udata = null,
     }};
@@ -46,5 +46,5 @@ test "delivers a triggered user event" {
     try std.testing.expectEqual(1, ready);
 
     try std.testing.expectEqual(7, events[0].ident);
-    try std.testing.expectEqual(sys.EVFILT.USER, events[0].filter);
+    try std.testing.expectEqual(sys.USER.FILTER, events[0].filter);
 }
