@@ -27,7 +27,7 @@ test "delivers a triggered user event" {
         .udata = null,
     }};
     // register event listening for User Events.
-    const added = sys.kevent(kq, &add, 1, null, 0, null);
+    const added = sys.kevent(kq, &add, add.len, null, 0, null);
     try std.testing.expectEqual(0, added);
 
     const trigger = [_]sys.Kevent{.{
@@ -42,7 +42,7 @@ test "delivers a triggered user event" {
     const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
     var events: [1]sys.Kevent = undefined;
     // trigger User Event and then collect it in events.
-    const ready = sys.kevent(kq, &trigger, 1, &events, 1, &now);
+    const ready = sys.kevent(kq, &trigger, trigger.len, &events, events.len, &now);
     try std.testing.expectEqual(1, ready);
 
     try std.testing.expectEqual(7, events[0].ident);
