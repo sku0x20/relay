@@ -1,5 +1,5 @@
 const std = @import("std");
 
-test "placeholder fails until real e2e tests exist" {
+test "e2e" {
     try std.testing.expect(false);
 }
