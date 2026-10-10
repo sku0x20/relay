@@ -18,7 +18,6 @@ test "delivers a triggered user event" {
     const kq = sys.kqueue();
     defer _ = sys.close(kq);
 
-    // register user event 7
     const add = [_]sys.Kevent{.{
         .ident = 7,
         .filter = sys.EVFILT.USER,
@@ -27,10 +26,10 @@ test "delivers a triggered user event" {
         .data = 0,
         .udata = null,
     }};
+    // register
     const added = sys.kevent(kq, &add, 1, null, 0, null);
     try std.testing.expectEqual(0, added);
 
-    // trigger it and collect, without blocking
     const trigger = [_]sys.Kevent{.{
         .ident = 7,
         .filter = sys.EVFILT.USER,
@@ -41,10 +40,10 @@ test "delivers a triggered user event" {
     }};
     const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
     var events: [1]sys.Kevent = undefined;
+    // trigger and collect
     const ready = sys.kevent(kq, &trigger, 1, &events, 1, &now);
     try std.testing.expectEqual(1, ready);
 
-    // event 7 comes back
     try std.testing.expectEqual(7, events[0].ident);
     try std.testing.expectEqual(sys.EVFILT.USER, events[0].filter);
 }
