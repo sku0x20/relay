@@ -3,6 +3,8 @@
 pub extern "c" fn kqueue() c_int;
 pub extern "c" fn close(fd: c_int) c_int;
 
+// --- Errors ---
+
 extern "c" fn __error() *c_int;
 
 pub const E = enum(c_int) {
