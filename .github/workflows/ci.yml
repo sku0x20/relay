@@ -19,5 +19,8 @@ jobs:
       - name: Build
         run: zig build
 
+      - name: Unit tests
+        run: zig build test --summary all
+
       - name: e2e tests
         run: zig build e2e --summary all
