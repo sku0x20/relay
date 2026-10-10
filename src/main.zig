@@ -1,5 +1,5 @@
-const std = @import("std");
+const app = @import("main/main.zig");
 
 pub fn main() void {
-    std.log.info("hello world", .{});
+    app.run();
 }
