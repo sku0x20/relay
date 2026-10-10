@@ -27,7 +27,7 @@ pub fn build(b: *std.Build) void {
     // --- unit tests ---
     const unit_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/test.test.zig"),
+            .root_source_file = b.path("src/test.zig"),
             .target = target,
             .optimize = optimize,
         }),
@@ -41,7 +41,7 @@ pub fn build(b: *std.Build) void {
     // --- e2e tests ---
     const e2e_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/e2e.test.zig"),
+            .root_source_file = b.path("src/e2e.zig"),
             .target = target,
             .optimize = optimize,
         }),
