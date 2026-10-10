@@ -4,7 +4,7 @@ const builtin = @import("builtin");
 
 comptime {
     _ = @import("main.zig");
-    if (builtin.os.tag == .macos) {
-        _ = @import("darwin/sys.zig");
+    if (builtin.os.tag.isDarwin()) {
+        _ = @import("darwin/0_all.zig");
     }
 }
