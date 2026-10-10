@@ -20,4 +20,16 @@ pub fn build(b: *std.Build) void {
 
     const run_step = b.step("run", "Run relay");
     run_step.dependOn(&run_cmd.step);
+
+    const e2e_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/e2e.test.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    const run_e2e = b.addRunArtifact(e2e_tests);
+
+    const e2e_step = b.step("e2e", "Run end-to-end tests");
+    e2e_step.dependOn(&run_e2e.step);
 }
