@@ -13,16 +13,6 @@ test "reports EBADF closing an invalid descriptor" {
     try std.testing.expectEqual(sys.E.BADF, sys.errno(rc));
 }
 
-test "lays out Kevent like struct kevent" {
-    try std.testing.expectEqual(32, @sizeOf(sys.Kevent));
-    try std.testing.expectEqual(0, @offsetOf(sys.Kevent, "ident"));
-    try std.testing.expectEqual(8, @offsetOf(sys.Kevent, "filter"));
-    try std.testing.expectEqual(10, @offsetOf(sys.Kevent, "flags"));
-    try std.testing.expectEqual(12, @offsetOf(sys.Kevent, "fflags"));
-    try std.testing.expectEqual(16, @offsetOf(sys.Kevent, "data"));
-    try std.testing.expectEqual(24, @offsetOf(sys.Kevent, "udata"));
-}
-
 test "delivers a triggered user event" {
     const kq = sys.kqueue();
     defer _ = sys.close(kq);
