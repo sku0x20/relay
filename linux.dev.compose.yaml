@@ -1,0 +1,12 @@
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: linux.dev.Dockerfile
+    # tini as PID 1 so `sleep infinity` stops immediately on `down`
+    init: true
+    volumes:
+      - .:/app
+      # keep Linux build output separate from the host's macOS output
+      - /app/.zig-cache
+      - /app/zig-out
