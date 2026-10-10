@@ -1,10 +1,6 @@
 const std = @import("std");
 const relay_exe = @import("build_options").relay_exe;
 
-test "e2e" {
-    try std.testing.expect(false);
-}
-
 test "runBuild" {
     const gpa = std.testing.allocator;
     const result = try std.process.run(gpa, std.testing.io, .{
