@@ -31,6 +31,8 @@ pub const EV = struct {
     pub const ADD: u16 = 0x0001; // EV_ADD
 };
 
+// --- Filters ---
+
 pub const USER = struct {
     pub const FILTER: i16 = -10; // EVFILT_USER
     pub const TRIGGER: u32 = 0x01000000; // NOTE_TRIGGER
