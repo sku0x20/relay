@@ -1,0 +1,7 @@
+.{
+    .name = .relay,
+    .version = "0.0.1",
+    .minimum_zig_version = "0.16.0",
+    .paths = .{""},
+    .fingerprint = 0x5d3ae2b92ad4a087,
+}
