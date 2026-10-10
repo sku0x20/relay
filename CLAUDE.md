@@ -6,4 +6,4 @@
 
 ## Naming
 
-- Crisp, short names. Tests read RSpec-style: subject implicit (`it 'validates'`).
+- Crisp, short names. Test names describe behaviour, subject implicit (GOOS / TestDox style).
