@@ -1,5 +1,5 @@
 const std = @import("std");
 
-test "scaffolding fails on purpose" {
+test "fails" {
     try std.testing.expect(false);
 }

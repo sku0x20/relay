@@ -1,7 +1,7 @@
 const std = @import("std");
 const relay_exe = @import("build_options").relay_exe;
 
-test "runBuild" {
+test "greets" {
     const gpa = std.testing.allocator;
     const result = try std.process.run(gpa, std.testing.io, .{
         .argv = &.{relay_exe},
