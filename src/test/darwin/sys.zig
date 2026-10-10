@@ -38,6 +38,7 @@ test "delivers a triggered user event" {
         .data = 0,
         .udata = null,
     }};
+    // null will block indefinitely
     const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
     var events: [1]sys.Kevent = undefined;
     // trigger User Event and then collect it in events.
