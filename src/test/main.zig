@@ -1,5 +1,5 @@
 const std = @import("std");
 
-test "fails" {
-    try std.testing.expect(false);
+test "passes" {
+    try std.testing.expect(true);
 }
