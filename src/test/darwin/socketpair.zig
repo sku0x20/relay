@@ -162,6 +162,9 @@ test "close removes registration" {
     try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
 }
 
+// Backpressure: when the far side can't keep up and its send buffer fills,
+// stop reading from this side instead of buffering without bound; resume
+// once the far side drains.
 test "no reads while disabled" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
@@ -205,6 +208,9 @@ test "no reads while disabled" {
     try std.testing.expectEqual(2, events[0].data);
 }
 
+// Half-close: a client sends its request, then shutdown(SHUT_WR) to say
+// "that's all", and waits for the reply (`nc -N`, scripts piping a file).
+// EOF on read only ends that direction; forward it and keep relaying replies.
 test "replies after peer half-close" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
