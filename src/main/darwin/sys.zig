@@ -55,6 +55,7 @@ pub const Timespec = extern struct {
 pub const EV = struct {
     pub const ADD: u16 = 0x0001; // EV_ADD
     pub const CLEAR: u16 = 0x0020; // EV_CLEAR
+    pub const EOF: u16 = 0x8000; // EV_EOF
 };
 
 // --- Filters ---
