@@ -22,7 +22,7 @@ test "reports a socket readable after its peer writes" {
     try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
 
     // send from the other end.
-    try std.testing.expectEqual(2, sys.write(fds[0], "hi", 2));
+    try std.testing.expectEqual(2, sys.send(fds[0], "hi", 2, 0));
 
     const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
     var events: [1]sys.Kevent = undefined;
@@ -36,7 +36,7 @@ test "reports a socket readable after its peer writes" {
     try std.testing.expectEqual(2, events[0].data);
 
     var buf: [2]u8 = undefined;
-    try std.testing.expectEqual(2, sys.read(fds[1], &buf, buf.len));
+    try std.testing.expectEqual(2, sys.recv(fds[1], &buf, buf.len, 0));
     try std.testing.expectEqualStrings("hi", &buf);
 }
 
@@ -55,7 +55,7 @@ test "reports a full socket writable once its peer drains it" {
     // fill fds[0]'s send buffer.
     const chunk = [_]u8{0} ** 4096;
     while (true) {
-        const rc = sys.write(fds[0], &chunk, chunk.len);
+        const rc = sys.send(fds[0], &chunk, chunk.len, 0);
         if (rc == -1) {
             try std.testing.expectEqual(sys.E.AGAIN, sys.errno(rc));
             break;
@@ -83,7 +83,7 @@ test "reports a full socket writable once its peer drains it" {
 
     // drain from the other end.
     var buf: [4096]u8 = undefined;
-    while (sys.read(fds[1], &buf, buf.len) > 0) {}
+    while (sys.recv(fds[1], &buf, buf.len, 0) > 0) {}
 
     // drained: writable.
     try std.testing.expectEqual(1, sys.kevent(kq, null, 0, &events, events.len, &now));
@@ -130,7 +130,7 @@ test "reports EOF once its peer closes" {
 
     // read returns 0 at EOF.
     var buf: [1]u8 = undefined;
-    try std.testing.expectEqual(0, sys.read(fds[1], &buf, buf.len));
+    try std.testing.expectEqual(0, sys.recv(fds[1], &buf, buf.len, 0));
 }
 
 test "forgets a socket once it is closed" {
@@ -153,7 +153,7 @@ test "forgets a socket once it is closed" {
     try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
 
     // make fds[1] readable, then close it before collecting.
-    try std.testing.expectEqual(2, sys.write(fds[0], "hi", 2));
+    try std.testing.expectEqual(2, sys.send(fds[0], "hi", 2, 0));
     try std.testing.expectEqual(0, sys.close(fds[1]));
 
     const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
@@ -183,7 +183,7 @@ test "pauses reads while disabled" {
     try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
 
     // send from the other end.
-    try std.testing.expectEqual(2, sys.write(fds[0], "hi", 2));
+    try std.testing.expectEqual(2, sys.send(fds[0], "hi", 2, 0));
 
     const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
     var events: [1]sys.Kevent = undefined;
