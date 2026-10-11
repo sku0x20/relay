@@ -180,3 +180,32 @@ test "reports EOF once its peer closes" {
     var buf: [1]u8 = undefined;
     try std.testing.expectEqual(0, sys.read(fds[1], &buf, buf.len));
 }
+
+test "forgets a socket once it is closed" {
+    var fds: [2]c_int = undefined;
+    try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
+    defer _ = sys.close(fds[0]);
+
+    const kq = sys.kqueue();
+    defer _ = sys.close(kq);
+
+    const add = [_]sys.Kevent{.{
+        .ident = @intCast(fds[1]),
+        .filter = sys.READ.FILTER,
+        .flags = sys.EV.ADD,
+        .fflags = 0,
+        .data = 0,
+        .udata = null,
+    }};
+    // watch fds[1] for incoming bytes.
+    try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
+
+    // make fds[1] readable, then close it before collecting.
+    try std.testing.expectEqual(2, sys.write(fds[0], "hi", 2));
+    try std.testing.expectEqual(0, sys.close(fds[1]));
+
+    const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
+    var events: [1]sys.Kevent = undefined;
+    // close removed the registration, pending event included.
+    try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
+}
