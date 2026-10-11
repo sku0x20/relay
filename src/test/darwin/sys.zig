@@ -48,3 +48,62 @@ test "user event delivered after trigger" {
     try std.testing.expectEqual(7, events[0].ident);
     try std.testing.expectEqual(sys.USER.FILTER, events[0].filter);
 }
+
+test "udata returned with event" {
+    const kq = sys.kqueue();
+    defer _ = sys.close(kq);
+
+    // stands in for the connection an event belongs to.
+    var conn: u32 = 42;
+
+    const add = [_]sys.Kevent{.{
+        .ident = 7,
+        .filter = sys.USER.FILTER,
+        .flags = sys.EV.ADD,
+        .fflags = sys.USER.TRIGGER,
+        .data = 0,
+        .udata = &conn,
+    }};
+    const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
+    var events: [1]sys.Kevent = undefined;
+    // register and trigger in one change; the kernel stores udata, never reading it.
+    try std.testing.expectEqual(1, sys.kevent(kq, &add, add.len, &events, events.len, &now));
+
+    // the event leads straight back to its owner, no lookup by fd.
+    const owner: *u32 = @ptrCast(@alignCast(events[0].udata.?));
+    try std.testing.expectEqual(&conn, owner);
+    try std.testing.expectEqual(42, owner.*);
+}
+
+test "udata replaced by later change" {
+    const kq = sys.kqueue();
+    defer _ = sys.close(kq);
+
+    var conn: u32 = 42;
+
+    const add = [_]sys.Kevent{.{
+        .ident = 7,
+        .filter = sys.USER.FILTER,
+        .flags = sys.EV.ADD,
+        .fflags = 0,
+        .data = 0,
+        .udata = &conn,
+    }};
+    try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
+
+    const trigger = [_]sys.Kevent{.{
+        .ident = 7,
+        .filter = sys.USER.FILTER,
+        .flags = 0,
+        .fflags = sys.USER.TRIGGER,
+        .data = 0,
+        .udata = null,
+    }};
+    const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
+    var events: [1]sys.Kevent = undefined;
+    try std.testing.expectEqual(1, sys.kevent(kq, &trigger, trigger.len, &events, events.len, &now));
+
+    // any change overwrites udata, EV_ENABLE and EV_DISABLE included:
+    // pass it on every change, not just the first.
+    try std.testing.expectEqual(null, events[0].udata);
+}
