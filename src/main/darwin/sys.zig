@@ -7,6 +7,7 @@ pub extern "c" fn write(fd: c_int, buf: [*]const u8, nbyte: usize) isize;
 pub extern "c" fn send(fd: c_int, buf: [*]const u8, len: usize, flags: c_int) isize;
 pub extern "c" fn recv(fd: c_int, buf: [*]u8, len: usize, flags: c_int) isize;
 pub extern "c" fn socketpair(domain: c_int, kind: c_int, protocol: c_int, fds: *[2]c_int) c_int;
+pub extern "c" fn shutdown(fd: c_int, how: c_int) c_int;
 pub extern "c" fn fcntl(fd: c_int, cmd: c_int, ...) c_int;
 pub extern "c" fn kevent(
     kq: c_int,
@@ -36,6 +37,10 @@ pub const AF = struct {
 
 pub const SOCK = struct {
     pub const STREAM: c_int = 1; // SOCK_STREAM
+};
+
+pub const SHUT = struct {
+    pub const WR: c_int = 1; // SHUT_WR
 };
 
 // --- kevent ---
