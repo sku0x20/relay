@@ -128,7 +128,7 @@ test "reports EOF once its peer closes" {
     // nothing was sent, so nothing is left to read.
     try std.testing.expectEqual(0, events[0].data);
 
-    // read returns 0 at EOF.
+    // recv returns 0 at EOF.
     var buf: [1]u8 = undefined;
     try std.testing.expectEqual(0, sys.recv(fds[1], &buf, buf.len, 0));
 }
