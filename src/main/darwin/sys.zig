@@ -7,6 +7,7 @@ pub extern "c" fn recv(fd: c_int, buf: [*]u8, len: usize, flags: c_int) isize;
 pub extern "c" fn socketpair(domain: c_int, kind: c_int, protocol: c_int, fds: *[2]c_int) c_int;
 pub extern "c" fn shutdown(fd: c_int, how: c_int) c_int;
 pub extern "c" fn fcntl(fd: c_int, cmd: c_int, ...) c_int;
+pub extern "c" fn signal(sig: c_int, handler: ?SIG.Handler) ?SIG.Handler;
 pub extern "c" fn kevent(
     kq: c_int,
     changelist: ?[*]const Kevent,
@@ -35,6 +36,10 @@ pub const AF = struct {
 
 pub const SOCK = struct {
     pub const STREAM: c_int = 1; // SOCK_STREAM
+};
+
+pub const MSG = struct {
+    pub const NOSIGNAL: c_int = 0x80000; // MSG_NOSIGNAL
 };
 
 pub const SHUT = struct {
@@ -80,6 +85,14 @@ pub const USER = struct {
     pub const TRIGGER: u32 = 0x01000000; // NOTE_TRIGGER
 };
 
+// --- Signals ---
+
+pub const SIG = struct {
+    pub const Handler = *const fn (c_int) callconv(.c) void;
+    pub const DFL: ?Handler = null; // SIG_DFL
+    pub const PIPE: c_int = 13; // SIGPIPE
+};
+
 // --- Errors ---
 
 extern "c" fn __error() *c_int;
@@ -87,6 +100,7 @@ extern "c" fn __error() *c_int;
 pub const E = enum(c_int) {
     SUCCESS = 0,
     BADF = 9,
+    PIPE = 32,
     AGAIN = 35,
     _,
 };

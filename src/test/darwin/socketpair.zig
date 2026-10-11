@@ -240,3 +240,21 @@ test "carries replies after its peer half-closes" {
     try std.testing.expectEqual(2, sys.recv(fds[0], &buf, buf.len, 0));
     try std.testing.expectEqualStrings("hi", &buf);
 }
+
+test "fails with EPIPE, not SIGPIPE, sending to a closed peer" {
+    // Zig's Io installs a no-op SIGPIPE handler; restore the default, which kills.
+    const old = sys.signal(sys.SIG.PIPE, sys.SIG.DFL);
+    defer _ = sys.signal(sys.SIG.PIPE, old);
+
+    var fds: [2]c_int = undefined;
+    try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
+    defer _ = sys.close(fds[0]);
+
+    // hang up the other end.
+    try std.testing.expectEqual(0, sys.close(fds[1]));
+
+    // NOSIGNAL turns the would-be SIGPIPE into a plain error.
+    const rc = sys.send(fds[0], "hi", 2, sys.MSG.NOSIGNAL);
+    try std.testing.expectEqual(-1, rc);
+    try std.testing.expectEqual(sys.E.PIPE, sys.errno(rc));
+}
