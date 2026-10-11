@@ -116,12 +116,12 @@ test "reports a full socket writable once its peer drains it" {
     const add = [_]sys.Kevent{.{
         .ident = @intCast(fds[0]),
         .filter = sys.WRITE.FILTER,
-        .flags = sys.EV.ADD,
+        .flags = sys.EV.ADD | sys.EV.CLEAR,
         .fflags = 0,
         .data = 0,
         .udata = null,
     }};
-    // watch fds[0] for free space.
+    // watch fds[0] for free space; CLEAR reports each change once.
     try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
 
     const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
@@ -139,4 +139,7 @@ test "reports a full socket writable once its peer drains it" {
     try std.testing.expectEqual(sys.WRITE.FILTER, events[0].filter);
     // data holds the free space in the send buffer.
     try std.testing.expect(events[0].data > 0);
+
+    // cleared: not reported again until the free space changes.
+    try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
 }
