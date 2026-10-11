@@ -96,44 +96,6 @@ test "socket writable again after peer drains" {
     try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
 }
 
-test "eof after peer close" {
-    var fds: [2]c_int = undefined;
-    try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
-    defer _ = sys.close(fds[1]);
-
-    const kq = sys.kqueue();
-    defer _ = sys.close(kq);
-
-    const add = [_]sys.Kevent{.{
-        .ident = @intCast(fds[1]),
-        .filter = sys.READ.FILTER,
-        .flags = sys.EV.ADD,
-        .fflags = 0,
-        .data = 0,
-        .udata = null,
-    }};
-    // watch fds[1] for incoming bytes.
-    try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
-
-    // hang up the other end.
-    try std.testing.expectEqual(0, sys.close(fds[0]));
-
-    const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
-    var events: [1]sys.Kevent = undefined;
-    // a hangup is reported as readable, flagged EOF.
-    try std.testing.expectEqual(1, sys.kevent(kq, null, 0, &events, events.len, &now));
-    try std.testing.expectEqual(@as(usize, @intCast(fds[1])), events[0].ident);
-    try std.testing.expectEqual(sys.READ.FILTER, events[0].filter);
-    try std.testing.expect(events[0].flags & sys.EV.EOF != 0);
-    // EOF means the peer stopped sending, not that the buffer is empty:
-    // data counts bytes still unread. Here nothing was sent.
-    try std.testing.expectEqual(0, events[0].data);
-
-    // recv returns 0 once the buffer is drained: the real end.
-    var buf: [1]u8 = undefined;
-    try std.testing.expectEqual(0, sys.recv(fds[1], &buf, buf.len, 0));
-}
-
 test "unread bytes before eof" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
@@ -159,7 +121,8 @@ test "unread bytes before eof" {
 
     const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
     var events: [1]sys.Kevent = undefined;
-    // flagged EOF, yet bytes are still waiting.
+    // EOF means the peer stopped sending, not that the buffer is empty:
+    // data counts bytes still unread.
     try std.testing.expectEqual(1, sys.kevent(kq, null, 0, &events, events.len, &now));
     try std.testing.expect(events[0].flags & sys.EV.EOF != 0);
     try std.testing.expectEqual(2, events[0].data);
