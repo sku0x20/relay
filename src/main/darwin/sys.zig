@@ -64,9 +64,11 @@ pub const Timespec = extern struct {
 
 pub const EV = struct {
     pub const ADD: u16 = 0x0001; // EV_ADD
+    pub const DELETE: u16 = 0x0002; // EV_DELETE
     pub const ENABLE: u16 = 0x0004; // EV_ENABLE
     pub const DISABLE: u16 = 0x0008; // EV_DISABLE
     pub const CLEAR: u16 = 0x0020; // EV_CLEAR
+    pub const ERROR: u16 = 0x4000; // EV_ERROR
     pub const EOF: u16 = 0x8000; // EV_EOF
 };
 
@@ -99,6 +101,7 @@ extern "c" fn __error() *c_int;
 
 pub const E = enum(c_int) {
     SUCCESS = 0,
+    NOENT = 2,
     BADF = 9,
     PIPE = 32,
     AGAIN = 35,

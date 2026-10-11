@@ -107,3 +107,66 @@ test "udata replaced by later change" {
     // pass it on every change, not just the first.
     try std.testing.expectEqual(null, events[0].udata);
 }
+
+test "failed change reported as error event" {
+    const kq = sys.kqueue();
+    defer _ = sys.close(kq);
+
+    const changes = [_]sys.Kevent{
+        .{
+            .ident = 1,
+            .filter = sys.USER.FILTER,
+            .flags = sys.EV.DELETE,
+            .fflags = 0,
+            .data = 0,
+            .udata = null,
+        },
+        .{
+            .ident = 2,
+            .filter = sys.USER.FILTER,
+            .flags = sys.EV.ADD,
+            .fflags = 0,
+            .data = 0,
+            .udata = null,
+        },
+    };
+    const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
+    var events: [2]sys.Kevent = undefined;
+    // delete something never added, then add something new.
+    // with room in events, a failed change becomes an event, not a -1 return.
+    try std.testing.expectEqual(1, sys.kevent(kq, &changes, changes.len, &events, events.len, &now));
+    try std.testing.expectEqual(1, events[0].ident);
+    try std.testing.expect(events[0].flags & sys.EV.ERROR != 0);
+    // data holds the errno.
+    try std.testing.expectEqual(@intFromEnum(sys.E.NOENT), events[0].data);
+
+    const trigger = [_]sys.Kevent{.{
+        .ident = 2,
+        .filter = sys.USER.FILTER,
+        .flags = 0,
+        .fflags = sys.USER.TRIGGER,
+        .data = 0,
+        .udata = null,
+    }};
+    // the rest of the batch still applied.
+    try std.testing.expectEqual(1, sys.kevent(kq, &trigger, trigger.len, &events, events.len, &now));
+    try std.testing.expectEqual(2, events[0].ident);
+}
+
+test "ENOENT when no room for error event" {
+    const kq = sys.kqueue();
+    defer _ = sys.close(kq);
+
+    const delete = [_]sys.Kevent{.{
+        .ident = 1,
+        .filter = sys.USER.FILTER,
+        .flags = sys.EV.DELETE,
+        .fflags = 0,
+        .data = 0,
+        .udata = null,
+    }};
+    // no events array: the failure falls back to -1 and errno.
+    const rc = sys.kevent(kq, &delete, delete.len, null, 0, null);
+    try std.testing.expectEqual(-1, rc);
+    try std.testing.expectEqual(sys.E.NOENT, sys.errno(rc));
+}
