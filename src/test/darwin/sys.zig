@@ -209,3 +209,46 @@ test "forgets a socket once it is closed" {
     // close removed the registration, pending event included.
     try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
 }
+
+test "pauses reads while disabled" {
+    var fds: [2]c_int = undefined;
+    try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
+    defer _ = sys.close(fds[0]);
+    defer _ = sys.close(fds[1]);
+
+    const kq = sys.kqueue();
+    defer _ = sys.close(kq);
+
+    const add = [_]sys.Kevent{.{
+        .ident = @intCast(fds[1]),
+        .filter = sys.READ.FILTER,
+        .flags = sys.EV.ADD | sys.EV.DISABLE,
+        .fflags = 0,
+        .data = 0,
+        .udata = null,
+    }};
+    // watch fds[1] for incoming bytes, paused from the start.
+    try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
+
+    // send from the other end.
+    try std.testing.expectEqual(2, sys.write(fds[0], "hi", 2));
+
+    const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
+    var events: [1]sys.Kevent = undefined;
+    // disabled: readable, but not reported.
+    try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
+
+    const enable = [_]sys.Kevent{.{
+        .ident = @intCast(fds[1]),
+        .filter = sys.READ.FILTER,
+        .flags = sys.EV.ENABLE,
+        .fflags = 0,
+        .data = 0,
+        .udata = null,
+    }};
+    // resume, and collect what was held back.
+    try std.testing.expectEqual(1, sys.kevent(kq, &enable, enable.len, &events, events.len, &now));
+    try std.testing.expectEqual(@as(usize, @intCast(fds[1])), events[0].ident);
+    try std.testing.expectEqual(sys.READ.FILTER, events[0].filter);
+    try std.testing.expectEqual(2, events[0].data);
+}
