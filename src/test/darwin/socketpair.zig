@@ -133,7 +133,7 @@ test "eof after peer close" {
     try std.testing.expectEqual(0, sys.recv(fds[1], &buf, buf.len, 0));
 }
 
-test "socket forgotten after close" {
+test "close removes registration" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
     defer _ = sys.close(fds[0]);
