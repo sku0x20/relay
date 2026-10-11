@@ -125,10 +125,11 @@ test "eof after peer close" {
     try std.testing.expectEqual(@as(usize, @intCast(fds[1])), events[0].ident);
     try std.testing.expectEqual(sys.READ.FILTER, events[0].filter);
     try std.testing.expect(events[0].flags & sys.EV.EOF != 0);
-    // nothing was sent, so nothing is left to read.
+    // EOF means the peer stopped sending, not that the buffer is empty:
+    // data counts bytes still unread. Here nothing was sent.
     try std.testing.expectEqual(0, events[0].data);
 
-    // recv returns 0 at EOF.
+    // recv returns 0 once the buffer is drained: the real end.
     var buf: [1]u8 = undefined;
     try std.testing.expectEqual(0, sys.recv(fds[1], &buf, buf.len, 0));
 }
