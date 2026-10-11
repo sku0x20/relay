@@ -138,6 +138,30 @@ test "socket writable again after peer drains" {
     try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
 }
 
+test "short send when buffer can't fit all" {
+    var fds: [2]c_int = undefined;
+    try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
+    defer _ = sys.close(fds[0]);
+    defer _ = sys.close(fds[1]);
+
+    // fail with EAGAIN instead of blocking.
+    const flags = sys.fcntl(fds[0], sys.F.GETFL);
+    try std.testing.expectEqual(0, sys.fcntl(fds[0], sys.F.SETFL, flags | sys.O.NONBLOCK));
+
+    // more than the send buffer holds.
+    const big = [_]u8{0} ** (1024 * 1024);
+
+    // takes what fits and says how much; the caller resends the rest later.
+    const sent = sys.send(fds[0], &big, big.len, 0);
+    try std.testing.expect(sent > 0);
+    try std.testing.expect(sent < big.len);
+
+    // full: nothing more fits.
+    const rc = sys.send(fds[0], &big, big.len, 0);
+    try std.testing.expectEqual(-1, rc);
+    try std.testing.expectEqual(sys.E.AGAIN, sys.errno(rc));
+}
+
 test "unread bytes before eof" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
