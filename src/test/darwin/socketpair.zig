@@ -40,7 +40,7 @@ test "socket readable after peer write" {
     try std.testing.expectEqualStrings("hi", &buf);
 }
 
-test "full socket writable after peer drains" {
+test "socket writable again after peer drains" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
     defer _ = sys.close(fds[0]);
