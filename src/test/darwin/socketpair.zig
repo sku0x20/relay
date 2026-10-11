@@ -316,6 +316,36 @@ test "replies after peer half-close" {
     try std.testing.expectEqualStrings("hi", &buf);
 }
 
+test "writable with EOF after peer close" {
+    var fds: [2]c_int = undefined;
+    try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
+    defer _ = sys.close(fds[0]);
+
+    const kq = sys.kqueue();
+    defer _ = sys.close(kq);
+
+    const add = [_]sys.Kevent{.{
+        .ident = @intCast(fds[0]),
+        .filter = sys.WRITE.FILTER,
+        .flags = sys.EV.ADD,
+        .fflags = 0,
+        .data = 0,
+        .udata = null,
+    }};
+    // watch fds[0] for free space.
+    try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
+
+    // hang up the other end.
+    try std.testing.expectEqual(0, sys.close(fds[1]));
+
+    const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
+    var events: [1]sys.Kevent = undefined;
+    // flagged EOF: nobody is left to read, so stop writing before send fails.
+    try std.testing.expectEqual(1, sys.kevent(kq, null, 0, &events, events.len, &now));
+    try std.testing.expectEqual(sys.WRITE.FILTER, events[0].filter);
+    try std.testing.expect(events[0].flags & sys.EV.EOF != 0);
+}
+
 test "EPIPE, not SIGPIPE, after peer close" {
     // Zig's Io installs a no-op SIGPIPE handler; restore the default, which kills.
     const old = sys.signal(sys.SIG.PIPE, sys.SIG.DFL);
