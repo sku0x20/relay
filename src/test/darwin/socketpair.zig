@@ -1,7 +1,7 @@
 const std = @import("std");
 const sys = @import("../../main/darwin/sys.zig");
 
-test "reports a socket readable after its peer writes" {
+test "socket readable after peer write" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
     defer _ = sys.close(fds[0]);
@@ -40,7 +40,7 @@ test "reports a socket readable after its peer writes" {
     try std.testing.expectEqualStrings("hi", &buf);
 }
 
-test "reports a full socket writable once its peer drains it" {
+test "full socket writable after peer drains" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
     defer _ = sys.close(fds[0]);
@@ -96,7 +96,7 @@ test "reports a full socket writable once its peer drains it" {
     try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
 }
 
-test "reports EOF once its peer closes" {
+test "eof after peer close" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
     defer _ = sys.close(fds[1]);
@@ -133,7 +133,7 @@ test "reports EOF once its peer closes" {
     try std.testing.expectEqual(0, sys.recv(fds[1], &buf, buf.len, 0));
 }
 
-test "forgets a socket once it is closed" {
+test "socket forgotten after close" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
     defer _ = sys.close(fds[0]);
@@ -162,7 +162,7 @@ test "forgets a socket once it is closed" {
     try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
 }
 
-test "pauses reads while disabled" {
+test "no reads while disabled" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
     defer _ = sys.close(fds[0]);
@@ -205,7 +205,7 @@ test "pauses reads while disabled" {
     try std.testing.expectEqual(2, events[0].data);
 }
 
-test "carries replies after its peer half-closes" {
+test "replies after peer half-close" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
     defer _ = sys.close(fds[0]);
@@ -241,7 +241,7 @@ test "carries replies after its peer half-closes" {
     try std.testing.expectEqualStrings("hi", &buf);
 }
 
-test "fails with EPIPE, not SIGPIPE, sending to a closed peer" {
+test "EPIPE, not SIGPIPE, after peer close" {
     // Zig's Io installs a no-op SIGPIPE handler; restore the default, which kills.
     const old = sys.signal(sys.SIG.PIPE, sys.SIG.DFL);
     defer _ = sys.signal(sys.SIG.PIPE, old);

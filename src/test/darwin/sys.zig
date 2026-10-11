@@ -1,20 +1,20 @@
 const std = @import("std");
 const sys = @import("../../main/darwin/sys.zig");
 
-test "opens and closes a kqueue" {
+test "kqueue opens and closes" {
     const fd = sys.kqueue();
     try std.testing.expect(fd >= 0);
     try std.testing.expectEqual(0, sys.close(fd));
 }
 
-test "reports EBADF closing an invalid descriptor" {
+test "EBADF closing invalid fd" {
     const rc = sys.close(-1);
     try std.testing.expectEqual(-1, rc);
     try std.testing.expectEqual(sys.E.BADF, sys.errno(rc));
 }
 
 // User filter: an event no kernel source fires; our own code triggers it.
-test "delivers a triggered user event" {
+test "user event delivered after trigger" {
     const kq = sys.kqueue();
     defer _ = sys.close(kq);
 
