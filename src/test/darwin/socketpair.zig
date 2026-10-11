@@ -82,6 +82,54 @@ test "still readable after partial read" {
     try std.testing.expectEqual(0, sys.kevent(kq, null, 0, &events, events.len, &now));
 }
 
+test "read and write reported as separate events" {
+    var fds: [2]c_int = undefined;
+    try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
+    defer _ = sys.close(fds[0]);
+    defer _ = sys.close(fds[1]);
+
+    const kq = sys.kqueue();
+    defer _ = sys.close(kq);
+
+    const add = [_]sys.Kevent{
+        .{
+            .ident = @intCast(fds[1]),
+            .filter = sys.READ.FILTER,
+            .flags = sys.EV.ADD,
+            .fflags = 0,
+            .data = 0,
+            .udata = null,
+        },
+        .{
+            .ident = @intCast(fds[1]),
+            .filter = sys.WRITE.FILTER,
+            .flags = sys.EV.ADD,
+            .fflags = 0,
+            .data = 0,
+            .udata = null,
+        },
+    };
+    // watch fds[1] both ways; each (ident, filter) pair is its own registration.
+    try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
+
+    // make fds[1] readable; it's already writable.
+    try std.testing.expectEqual(2, sys.send(fds[0], "hi", 2, 0));
+
+    const now: sys.Timespec = .{ .sec = 0, .nsec = 0 };
+    var events: [2]sys.Kevent = undefined;
+    // one event per filter, same ident, in no promised order.
+    try std.testing.expectEqual(2, sys.kevent(kq, null, 0, &events, events.len, &now));
+    var reads: usize = 0;
+    var writes: usize = 0;
+    for (events) |event| {
+        try std.testing.expectEqual(@as(usize, @intCast(fds[1])), event.ident);
+        if (event.filter == sys.READ.FILTER) reads += 1;
+        if (event.filter == sys.WRITE.FILTER) writes += 1;
+    }
+    try std.testing.expectEqual(1, reads);
+    try std.testing.expectEqual(1, writes);
+}
+
 test "socket writable again after peer drains" {
     var fds: [2]c_int = undefined;
     try std.testing.expectEqual(0, sys.socketpair(sys.AF.UNIX, sys.SOCK.STREAM, 0, &fds));
