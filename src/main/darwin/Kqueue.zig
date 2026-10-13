@@ -13,8 +13,9 @@ pub fn init() !Kqueue {
     return .{ .fd = rc };
 }
 
-pub fn deinit(self: Kqueue) void {
-    _ = sys.close(self.fd);
+pub fn deinit(self: Kqueue) !void {
+    const rc = sys.close(self.fd);
+    try check(rc);
 }
 
 fn check(rc: c_int) Error!void {
