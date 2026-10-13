@@ -110,7 +110,6 @@ pub const EV = struct {
 
 pub const READ = struct {
     pub const FILTER: i16 = -1; // EVFILT_READ
-    pub const LOWAT: u32 = 0x00000001; // NOTE_LOWAT
 };
 
 pub const WRITE = struct {

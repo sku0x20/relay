@@ -19,14 +19,13 @@ test "datagrams read one per recv" {
     const kq = sys.kqueue();
     defer _ = sys.close(kq);
 
-    // loopback delivers datagrams asynchronously, after sendto returns, so
-    // don't report readable until both have arrived: 2 + 5 bytes.
+    // CLEAR: report again only when another datagram lands.
     const add = [_]sys.Kevent{.{
         .ident = @intCast(receiver),
         .filter = sys.READ.FILTER,
-        .flags = sys.EV.ADD,
-        .fflags = sys.READ.LOWAT,
-        .data = 7,
+        .flags = sys.EV.ADD | sys.EV.CLEAR,
+        .fflags = 0,
+        .data = 0,
         .udata = null,
     }};
     try std.testing.expectEqual(0, sys.kevent(kq, &add, add.len, null, 0, null));
@@ -34,14 +33,20 @@ test "datagrams read one per recv" {
     const sender = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
     try std.testing.expect(sender >= 0);
     defer _ = sys.close(sender);
-    // no connection: each datagram carries its destination.
-    try std.testing.expectEqual(2, sys.sendto(sender, "hi", 2, 0, &addr, len));
-    try std.testing.expectEqual(5, sys.sendto(sender, "there", 5, 0, &addr, len));
 
+    // loopback delivers asynchronously, after sendto returns, so wait.
     const second: sys.Timespec = .{ .sec = 1, .nsec = 0 };
     var events: [1]sys.Kevent = undefined;
-    // data counts bytes across all queued datagrams, not the next one's size.
+
+    // no connection: each datagram carries its destination.
+    try std.testing.expectEqual(2, sys.sendto(sender, "hi", 2, 0, &addr, len));
     try std.testing.expectEqual(1, sys.kevent(kq, null, 0, &events, events.len, &second));
+    try std.testing.expectEqual(2, events[0].data);
+
+    // fires only once "there" lands, so both are queued.
+    try std.testing.expectEqual(5, sys.sendto(sender, "there", 5, 0, &addr, len));
+    try std.testing.expectEqual(1, sys.kevent(kq, null, 0, &events, events.len, &second));
+    // data counts bytes across all queued datagrams, not the next one's size.
     try std.testing.expectEqual(7, events[0].data);
 
     // room for both, but each recv returns a single datagram.
