@@ -40,7 +40,7 @@ pub const FilterFlags = u32;
 pub const Data = isize;
 pub const UserData = anyopaque;
 
-pub const Change = struct {
+pub const Event = struct {
     fd: Fd,
     flags: Flags,
     filter: Filter,
@@ -49,3 +49,4 @@ pub const Change = struct {
     userData: ?*UserData,
 };
 
+pub const Change = Event;
