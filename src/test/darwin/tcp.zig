@@ -42,8 +42,11 @@ test "listener readable once client connects" {
     // the kernel completes the handshake and queues it; no accept needed.
     try std.testing.expectEqual(0, sys.connect(client, &addr, len));
 
+    // connect returns once the client sees the SYN-ACK; the listener queues
+    // the connection when the final ACK lands, which can be a moment later.
+    const second: sys.Timespec = .{ .sec = 1, .nsec = 0 };
     // readable: data holds the number of connections waiting.
-    try std.testing.expectEqual(1, sys.kevent(kq, null, 0, &events, events.len, &now));
+    try std.testing.expectEqual(1, sys.kevent(kq, null, 0, &events, events.len, &second));
     try std.testing.expectEqual(@as(usize, @intCast(listener)), events[0].ident);
     try std.testing.expectEqual(1, events[0].data);
 
