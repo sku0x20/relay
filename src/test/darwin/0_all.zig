@@ -3,4 +3,5 @@
 comptime {
     _ = @import("sys.zig");
     _ = @import("socketpair.zig");
+    _ = @import("tcp.zig");
 }

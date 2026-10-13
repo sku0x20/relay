@@ -5,6 +5,12 @@ pub extern "c" fn close(fd: c_int) c_int;
 pub extern "c" fn send(fd: c_int, buf: [*]const u8, len: usize, flags: c_int) isize;
 pub extern "c" fn recv(fd: c_int, buf: [*]u8, len: usize, flags: c_int) isize;
 pub extern "c" fn socketpair(domain: c_int, kind: c_int, protocol: c_int, fds: *[2]c_int) c_int;
+pub extern "c" fn socket(domain: c_int, kind: c_int, protocol: c_int) c_int;
+pub extern "c" fn bind(fd: c_int, addr: *const anyopaque, len: u32) c_int;
+pub extern "c" fn listen(fd: c_int, backlog: c_int) c_int;
+pub extern "c" fn accept(fd: c_int, addr: ?*anyopaque, len: ?*u32) c_int;
+pub extern "c" fn connect(fd: c_int, addr: *const anyopaque, len: u32) c_int;
+pub extern "c" fn getsockname(fd: c_int, addr: *anyopaque, len: *u32) c_int;
 pub extern "c" fn shutdown(fd: c_int, how: c_int) c_int;
 pub extern "c" fn fcntl(fd: c_int, cmd: c_int, ...) c_int;
 pub extern "c" fn signal(sig: c_int, handler: ?SIG.Handler) ?SIG.Handler;
@@ -32,6 +38,20 @@ pub const O = struct {
 
 pub const AF = struct {
     pub const UNIX: c_int = 1; // AF_UNIX
+    pub const INET: c_int = 2; // AF_INET
+};
+
+pub const INADDR = struct {
+    pub const LOOPBACK: u32 = 0x7f000001; // INADDR_LOOPBACK
+};
+
+/// IPv4 address; `port` and `addr` are in network byte order.
+pub const SockaddrIn = extern struct {
+    len: u8 = @sizeOf(SockaddrIn),
+    family: u8 = AF.INET,
+    port: u16,
+    addr: u32,
+    zero: [8]u8 = @splat(0),
 };
 
 pub const SOCK = struct {
