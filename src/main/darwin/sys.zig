@@ -5,6 +5,7 @@ pub extern "c" fn close(fd: c_int) c_int;
 pub extern "c" fn send(fd: c_int, buf: [*]const u8, len: usize, flags: c_int) isize;
 pub extern "c" fn sendto(fd: c_int, buf: [*]const u8, len: usize, flags: c_int, addr: *const anyopaque, addr_len: u32) isize;
 pub extern "c" fn recv(fd: c_int, buf: [*]u8, len: usize, flags: c_int) isize;
+pub extern "c" fn recvfrom(fd: c_int, buf: [*]u8, len: usize, flags: c_int, addr: ?*anyopaque, addr_len: ?*u32) isize;
 pub extern "c" fn socketpair(domain: c_int, kind: c_int, protocol: c_int, fds: *[2]c_int) c_int;
 pub extern "c" fn socket(domain: c_int, kind: c_int, protocol: c_int) c_int;
 pub extern "c" fn bind(fd: c_int, addr: *const anyopaque, len: u32) c_int;
