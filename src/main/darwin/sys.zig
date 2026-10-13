@@ -3,6 +3,7 @@
 pub extern "c" fn kqueue() c_int;
 pub extern "c" fn close(fd: c_int) c_int;
 pub extern "c" fn send(fd: c_int, buf: [*]const u8, len: usize, flags: c_int) isize;
+pub extern "c" fn sendto(fd: c_int, buf: [*]const u8, len: usize, flags: c_int, addr: *const anyopaque, addr_len: u32) isize;
 pub extern "c" fn recv(fd: c_int, buf: [*]u8, len: usize, flags: c_int) isize;
 pub extern "c" fn socketpair(domain: c_int, kind: c_int, protocol: c_int, fds: *[2]c_int) c_int;
 pub extern "c" fn socket(domain: c_int, kind: c_int, protocol: c_int) c_int;
@@ -65,6 +66,7 @@ pub const SockaddrIn = extern struct {
 
 pub const SOCK = struct {
     pub const STREAM: c_int = 1; // SOCK_STREAM
+    pub const DGRAM: c_int = 2; // SOCK_DGRAM
 };
 
 /// Largest `listen` backlog: the kernel clamps a negative backlog to `kern.ipc.somaxconn`.
@@ -108,6 +110,7 @@ pub const EV = struct {
 
 pub const READ = struct {
     pub const FILTER: i16 = -1; // EVFILT_READ
+    pub const LOWAT: u32 = 0x00000001; // NOTE_LOWAT
 };
 
 pub const WRITE = struct {
