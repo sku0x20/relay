@@ -13,7 +13,7 @@ test "listener readable once client connects" {
     };
     var len: u32 = @sizeOf(sys.SockaddrIn);
     try std.testing.expectEqual(0, sys.bind(listener, &addr, len));
-    try std.testing.expectEqual(0, sys.listen(listener, 16));
+    try std.testing.expectEqual(0, sys.listen(listener, sys.SOMAXCONN));
     // read back which port it picked.
     try std.testing.expectEqual(0, sys.getsockname(listener, &addr, &len));
 
@@ -74,7 +74,7 @@ test "rebind in TIME_WAIT needs REUSEADDR" {
     };
     var len: u32 = @sizeOf(sys.SockaddrIn);
     try std.testing.expectEqual(0, sys.bind(listener, &addr, len));
-    try std.testing.expectEqual(0, sys.listen(listener, 16));
+    try std.testing.expectEqual(0, sys.listen(listener, sys.SOMAXCONN));
     // read back which port it picked.
     try std.testing.expectEqual(0, sys.getsockname(listener, &addr, &len));
 
@@ -105,5 +105,5 @@ test "rebind in TIME_WAIT needs REUSEADDR" {
     const on: c_int = 1;
     try std.testing.expectEqual(0, sys.setsockopt(reuse, sys.SOL.SOCKET, sys.SO.REUSEADDR, &on, @sizeOf(c_int)));
     try std.testing.expectEqual(0, sys.bind(reuse, &addr, len));
-    try std.testing.expectEqual(0, sys.listen(reuse, 16));
+    try std.testing.expectEqual(0, sys.listen(reuse, sys.SOMAXCONN));
 }

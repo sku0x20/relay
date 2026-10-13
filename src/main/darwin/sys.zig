@@ -67,6 +67,9 @@ pub const SOCK = struct {
     pub const STREAM: c_int = 1; // SOCK_STREAM
 };
 
+/// Default `listen` backlog; the kernel caps any backlog at `kern.ipc.somaxconn`.
+pub const SOMAXCONN: c_int = 128; // SOMAXCONN
+
 pub const MSG = struct {
     pub const NOSIGNAL: c_int = 0x80000; // MSG_NOSIGNAL
 };
