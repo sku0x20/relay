@@ -10,6 +10,7 @@ pub extern "c" fn bind(fd: c_int, addr: *const anyopaque, len: u32) c_int;
 pub extern "c" fn listen(fd: c_int, backlog: c_int) c_int;
 pub extern "c" fn accept(fd: c_int, addr: ?*anyopaque, len: ?*u32) c_int;
 pub extern "c" fn connect(fd: c_int, addr: *const anyopaque, len: u32) c_int;
+pub extern "c" fn setsockopt(fd: c_int, level: c_int, name: c_int, value: *const anyopaque, len: u32) c_int;
 pub extern "c" fn getsockname(fd: c_int, addr: *anyopaque, len: *u32) c_int;
 pub extern "c" fn shutdown(fd: c_int, how: c_int) c_int;
 pub extern "c" fn fcntl(fd: c_int, cmd: c_int, ...) c_int;
@@ -39,6 +40,14 @@ pub const O = struct {
 pub const AF = struct {
     pub const UNIX: c_int = 1; // AF_UNIX
     pub const INET: c_int = 2; // AF_INET
+};
+
+pub const SOL = struct {
+    pub const SOCKET: c_int = 0xffff; // SOL_SOCKET
+};
+
+pub const SO = struct {
+    pub const REUSEADDR: c_int = 0x0004; // SO_REUSEADDR
 };
 
 pub const INADDR = struct {
@@ -125,6 +134,7 @@ pub const E = enum(c_int) {
     BADF = 9,
     PIPE = 32,
     AGAIN = 35,
+    ADDRINUSE = 48,
     _,
 };
 
