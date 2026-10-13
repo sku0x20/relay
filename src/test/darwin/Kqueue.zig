@@ -1,9 +1,9 @@
 const std = @import("std");
 const Kqueue = @import("../../main/darwin/Kqueue.zig");
 
-test "opens and closes" {
+test "init and deinit" {
     const kq = try Kqueue.init();
-    try kq.close();
+    defer kq.deinit();
 }
 
 test "closing invalid kqueue" {
