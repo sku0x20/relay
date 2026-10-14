@@ -1,7 +1,8 @@
 const sys = @import("sys.zig");
 
+pub const Kevent = sys.Kevent;
+
 pub const Fd = c_int;
-pub const Error = error{ BadFd, NotFound, Unexpected };
 const Kqueue = @This();
 
 fd: Fd,
@@ -21,6 +22,8 @@ pub fn deinit(self: Kqueue) void {
     self.close() catch {};
 }
 
+pub const Error = error{ BadFd, NotFound, Unexpected };
+
 fn check(rc: c_int) Error!void {
     if (rc >= 0) return;
     return switch (sys.errno(rc)) {
@@ -30,36 +33,15 @@ fn check(rc: c_int) Error!void {
     };
 }
 
-pub const Filter = i16;
-pub const Flags = u16;
-pub const FilterFlags = u32;
-pub const Data = isize;
-pub const UserData = anyopaque;
-
-pub const Event = struct {
-    fd: Fd,
-    flags: Flags,
-    filter: Filter,
-    fflags: FilterFlags,
-    data: Data,
-    userData: ?*UserData,
-};
-
-pub const Change = Event;
-
-/// Applies changes in order, one kevent call each, stopping at the first failure.
-/// No eventlist, so a failed change returns -1/errno instead of an EV_ERROR event.
-pub fn apply(self: Kqueue, changes: []const Change) !void {
-    for (changes) |change| {
-        const kevent = [_]sys.Kevent{.{
-            .ident = @intCast(change.fd),
-            .filter = change.filter,
-            .flags = change.flags,
-            .fflags = change.fflags,
-            .data = change.data,
-            .udata = change.userData,
-        }};
-        const rc = sys.kevent(self.fd, &kevent, kevent.len, null, 0, null);
-        try check(rc);
-    }
+pub fn apply(self: Kqueue, changes: []const Kevent) ![]Kevent {
+    const events: Kevent[changes.len] = undefined;
+    const rc = sys.kevent(
+        self.fd,
+        &changes,
+        changes.len,
+        &events,
+        events.len,
+        null,
+    );
+    try check(rc);
 }
