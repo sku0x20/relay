@@ -9,6 +9,7 @@ pub fn init() !UdpServer {
     const socket = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
     try check(socket);
     errdefer _ = sys.close(socket);
+
     var addr: sys.SockaddrIn = .{
         .port = 0,
         .addr = 0x0100007f,
