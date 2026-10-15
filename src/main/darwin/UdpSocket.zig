@@ -1,13 +1,21 @@
 const sys = @import("sys.zig");
-
 const SocketAddress = @import("../SocketAddress.zig");
+
+pub const Receiver = struct {
+    ctx: *anyopaque,
+    recv: *const fn (ctx: *anyopaque, data: []const u8) void,
+};
 
 const UdpSocket = @This();
 
 socket: i32,
 addr: sys.SockaddrIn,
+receiver: Receiver,
 
-pub fn init(socketAddress: SocketAddress) !UdpSocket {
+pub fn init(
+    socketAddress: SocketAddress,
+    receiver: Receiver,
+) !UdpSocket {
     const socket = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
     try check(socket);
     errdefer _ = sys.close(socket);
@@ -24,14 +32,15 @@ pub fn init(socketAddress: SocketAddress) !UdpSocket {
     return .{
         .socket = socket,
         .addr = addr,
+        .receiver = receiver,
     };
 }
 
-pub fn close(self: UdpSocket) !void {
+pub fn close(self: *const UdpSocket) !void {
     try check(sys.close(self.socket));
 }
 
-pub fn deinit(self: UdpSocket) void {
+pub fn deinit(self: *const UdpSocket) void {
     self.close() catch {};
 }
 
