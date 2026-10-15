@@ -1,5 +1,4 @@
 const sys = @import("sys.zig");
-const mem = @import("std").mem;
 
 const SocketAddress = @import("../SocketAddress.zig");
 
@@ -14,8 +13,8 @@ pub fn init(socketAddress: SocketAddress) !UdpSocket {
     errdefer _ = sys.close(socket);
 
     var addr: sys.SockaddrIn = .{
-        .port = socketAddress.port,
-        .addr = mem.nativeToBig(u32, socketAddress.addr),
+        .port = @byteSwap(socketAddress.port),
+        .addr = @byteSwap(socketAddress.addr),
     };
     var len: u32 = @sizeOf(sys.SockaddrIn);
 
