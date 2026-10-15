@@ -1,18 +1,42 @@
-const std = @import("std");
 const sys = @import("sys.zig");
 
 const UdpServer = @This();
 
 sockAddrIn: sys.SockaddrIn,
 
-/// `addr` is dotted IPv4, e.g. "127.0.0.1".
-pub fn init(addr: []const u8, port: u16) std.Io.net.Ip4Address.ParseError!UdpServer {
-    const ip4: std.Io.net.Ip4Address = try .parse(addr, port);
+pub fn init(addr: []const u8, port: u16) error{InvalidAddress}!UdpServer {
     return .{
         .sockAddrIn = .{
-            .port = std.mem.nativeToBig(u16, ip4.port),
-            // bytes are already in network order.
-            .addr = @bitCast(ip4.bytes),
+            // darwin is little-endian; network order is big.
+            .port = @byteSwap(port),
+            // octets in memory order are already network order.
+            .addr = @bitCast(try parseIp4(addr)),
         },
     };
+}
+
+/// Dotted IPv4, e.g. "127.0.0.1".
+fn parseIp4(text: []const u8) error{InvalidAddress}![4]u8 {
+    var octets: [4]u8 = undefined;
+    var index: usize = 0;
+    var value: u16 = 0;
+    var digits: usize = 0;
+    for (text) |c| switch (c) {
+        '0'...'9' => {
+            value = value * 10 + (c - '0');
+            digits += 1;
+            if (value > 255 or digits > 3) return error.InvalidAddress;
+        },
+        '.' => {
+            if (digits == 0 or index == 3) return error.InvalidAddress;
+            octets[index] = @intCast(value);
+            index += 1;
+            value = 0;
+            digits = 0;
+        },
+        else => return error.InvalidAddress,
+    };
+    if (digits == 0 or index != 3) return error.InvalidAddress;
+    octets[3] = @intCast(value);
+    return octets;
 }
