@@ -1,11 +1,11 @@
 const sys = @import("sys.zig");
 
-const UdpServer = @This();
+const UdpSocket = @This();
 
 socket: i32,
 addr: sys.SockaddrIn,
 
-pub fn init() !UdpServer {
+pub fn init() !UdpSocket {
     const socket = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
     try check(socket);
     errdefer _ = sys.close(socket);
@@ -25,11 +25,11 @@ pub fn init() !UdpServer {
     };
 }
 
-pub fn close(self: UdpServer) !void {
+pub fn close(self: UdpSocket) !void {
     try check(sys.close(self.socket));
 }
 
-pub fn deinit(self: UdpServer) void {
+pub fn deinit(self: UdpSocket) void {
     self.close() catch {};
 }
 
