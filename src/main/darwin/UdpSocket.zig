@@ -1,18 +1,21 @@
 const sys = @import("sys.zig");
+const mem = @import("std").mem;
+
+const SocketAddress = @import("../SocketAddress.zig");
 
 const UdpSocket = @This();
 
 socket: i32,
 addr: sys.SockaddrIn,
 
-pub fn init() !UdpSocket {
+pub fn init(socketAddress: SocketAddress) !UdpSocket {
     const socket = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
     try check(socket);
     errdefer _ = sys.close(socket);
 
     var addr: sys.SockaddrIn = .{
-        .port = 0,
-        .addr = 0x0100007f,
+        .port = socketAddress.port,
+        .addr = mem.nativeToBig(u32, socketAddress.addr),
     };
     var len: u32 = @sizeOf(sys.SockaddrIn);
 
