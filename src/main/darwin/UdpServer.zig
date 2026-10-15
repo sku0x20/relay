@@ -2,41 +2,43 @@ const sys = @import("sys.zig");
 
 const UdpServer = @This();
 
-sockAddrIn: sys.SockaddrIn,
+socket: i32,
+addr: sys.SockaddrIn,
 
-pub fn init(addr: []const u8, port: u16) error{InvalidAddress}!UdpServer {
+pub fn init() !UdpServer {
+    const socket = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
+    try check(socket);
+    var addr: sys.SockaddrIn = .{
+        .port = 0,
+        .addr = 0x0100007f,
+    };
+    var len: u32 = @sizeOf(sys.SockaddrIn);
+
+    try check(sys.bind(socket, &addr, len));
+    try check(sys.getsockname(socket, &addr, &len));
+
     return .{
-        .sockAddrIn = .{
-            // darwin is little-endian; network order is big.
-            .port = @byteSwap(port),
-            // octets in memory order are already network order.
-            .addr = @bitCast(try parseIp4(addr)),
-        },
+        .socket = socket,
+        .addr = addr,
     };
 }
 
-/// Dotted IPv4, e.g. "127.0.0.1".
-fn parseIp4(text: []const u8) error{InvalidAddress}![4]u8 {
-    var octets: [4]u8 = undefined;
-    var index: usize = 0;
-    var value: u16 = 0;
-    var digits: usize = 0;
-    for (text) |c| switch (c) {
-        '0'...'9' => {
-            value = value * 10 + (c - '0');
-            digits += 1;
-            if (value > 255 or digits > 3) return error.InvalidAddress;
-        },
-        '.' => {
-            if (digits == 0 or index == 3) return error.InvalidAddress;
-            octets[index] = @intCast(value);
-            index += 1;
-            value = 0;
-            digits = 0;
-        },
-        else => return error.InvalidAddress,
+pub fn close(self: UdpServer) !void {
+    try check(sys.close(self.socket));
+}
+
+pub fn deinit(self: UdpServer) void {
+    self.close() catch {};
+}
+
+fn check(rc: anytype) !void {
+    return switch (sys.errno(rc)) {
+        .SUCCESS => {},
+        .NOENT => error.NoEnt,
+        .BADF => error.BadF,
+        .PIPE => error.Pipe,
+        .AGAIN => error.Again,
+        .ADDRINUSE => error.AddrInUse,
+        _ => error.Unexpected,
     };
-    if (digits == 0 or index != 3) return error.InvalidAddress;
-    octets[3] = @intCast(value);
-    return octets;
 }

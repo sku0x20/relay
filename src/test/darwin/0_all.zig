@@ -5,4 +5,5 @@ comptime {
     _ = @import("sys_socketpair.zig");
     _ = @import("sys_tcp.zig");
     _ = @import("sys_udp.zig");
+    _ = @import("UdpServer.zig");
 }
