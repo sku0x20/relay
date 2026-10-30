@@ -55,26 +55,20 @@ test "datagram delivered by send" {
 }
 
 test "datagram received by recv" {
-    const socket = try UdpSocket.init(localhost);
-    defer socket.deinit();
+    const sender = try UdpSocket.init(localhost);
+    defer sender.deinit();
+    const receiver = try UdpSocket.init(localhost);
+    defer receiver.deinit();
 
-    const peerFd = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
-    defer _ = sys.close(peerFd);
-    try testing.expectEqual(2, sys.sendto(peerFd, "hi", 2, 0, &socket.addr, @sizeOf(sys.SockaddrIn)));
-
-    var peerAddr: sys.SockaddrIn = undefined;
-    var peerAddrLen: u32 = @sizeOf(sys.SockaddrIn);
-    try testing.expectEqual(0, sys.getsockname(peerFd, &peerAddr, &peerAddrLen));
+    var payload = "hi".*;
+    try sender.send(&.{ .data = &payload, .len = payload.len, .peer = addressOf(&receiver) });
 
     var buf: [16]u8 = undefined;
     var datagram: UdpSocket.Datagram = .{ .data = &buf, .len = 0, .peer = undefined };
-    for (0..100) |_| {
-        if (socket.recv(&datagram)) |_| break else |err| if (err != error.Again) return err;
-        try testing.io.sleep(.fromMilliseconds(1), .awake);
-    } else return error.Timeout;
+    try recvWait(&receiver, &datagram);
 
     try testing.expectEqualStrings("hi", datagram.data[0..datagram.len]);
-    try testing.expectEqual(SocketAddress{ .addr = localhost.addr, .port = @byteSwap(peerAddr.port) }, datagram.peer);
+    try testing.expectEqual(addressOf(&sender), datagram.peer);
 }
 
 test "nonblocking after init" {
