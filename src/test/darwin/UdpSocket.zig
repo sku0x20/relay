@@ -38,7 +38,10 @@ test "datagram delivered by sendTo" {
     const socket = try UdpSocket.init(socketAddress);
     defer socket.deinit();
 
-    try socket.sendTo("hi", .{ .addr = 0x7f000001, .port = @byteSwap(addr.port) });
+    try socket.sendTo(.{
+        .data = "hi",
+        .peer = .{ .addr = 0x7f000001, .port = @byteSwap(addr.port) },
+    });
 
     var buf: [16]u8 = undefined;
     try testing.expectEqual(2, sys.recv(peer, &buf, buf.len, 0));

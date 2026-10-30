@@ -30,24 +30,24 @@ pub fn init(socketAddress: SocketAddress) !UdpSocket {
     };
 }
 
+pub const Datagram = struct {
+    data: []const u8,
+    peer: SocketAddress,
+};
+
 // TODO: tell the caller when the socket is writable again, so it can retry.
 
 /// Nonblocking: `error.Again` means the kernel had no room and the datagram was not sent.
 /// It is not queued or retried; the caller decides whether to drop or retry.
 /// UDP is lossy anyway, so dropping is usually fine, and a queue here would
 /// need memory limits and write-ready events for a case that rarely happens.
-pub fn sendTo(self: *const UdpSocket, data: []const u8, to: SocketAddress) !void {
+pub fn sendTo(self: *const UdpSocket, datagram: Datagram) !void {
     const addr: sys.SockaddrIn = .{
-        .port = @byteSwap(to.port),
-        .addr = @byteSwap(to.addr),
+        .port = @byteSwap(datagram.peer.port),
+        .addr = @byteSwap(datagram.peer.addr),
     };
-    try check(sys.sendto(self.socket, data.ptr, data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
+    try check(sys.sendto(self.socket, datagram.data.ptr, datagram.data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
 }
-
-pub const Datagram = struct {
-    data: []u8,
-    from: SocketAddress,
-};
 
 pub fn recvFrom(self: *const UdpSocket, buf: []u8) !Datagram {
     _ = self;
