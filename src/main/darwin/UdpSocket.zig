@@ -41,7 +41,7 @@ pub const Datagram = struct {
 /// It is not queued or retried; the caller decides whether to drop or retry.
 /// UDP is lossy anyway, so dropping is usually fine, and a queue here would
 /// need memory limits and write-ready events for a case that rarely happens.
-pub fn send(self: *const UdpSocket, datagram: Datagram) !void {
+pub fn send(self: *const UdpSocket, datagram: *const Datagram) !void {
     const addr: sys.SockaddrIn = .{
         .port = @byteSwap(datagram.peer.port),
         .addr = @byteSwap(datagram.peer.addr),

@@ -39,7 +39,7 @@ test "datagram delivered by send" {
     defer socket.deinit();
 
     var data = "hi".*;
-    try socket.send(.{
+    try socket.send(&.{
         .data = &data,
         .peer = .{ .addr = 0x7f000001, .port = @byteSwap(addr.port) },
     });
