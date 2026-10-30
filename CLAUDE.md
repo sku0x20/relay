@@ -16,6 +16,8 @@
 
 ## Code
 
+- Zig APIs from memory are usually from older versions and won't compile. Check the installed stdlib (`$(mise where zig)/lib/std`) before using one.
+
 - `src/main` does not import std: use `sys.zig` bindings and builtins (`@byteSwap`, `@bitCast`), and hand-write small helpers. Tests may use std.
 - No comments, doc comments included, unless they explain something non-obvious.
 - No general-purpose Kqueue wrapper: one was tried and removed (70a35d8). Build on `sys.zig` directly.
