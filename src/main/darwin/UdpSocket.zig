@@ -44,7 +44,12 @@ pub fn sendTo(self: *const UdpSocket, data: []const u8, to: SocketAddress) !void
     try check(sys.sendto(self.socket, data.ptr, data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
 }
 
-pub fn recvFrom(self: *const UdpSocket, buf: []u8) !usize {
+pub const Datagram = struct {
+    data: []u8,
+    from: SocketAddress,
+};
+
+pub fn recvFrom(self: *const UdpSocket, buf: []u8) !Datagram {
     _ = self;
     _ = buf;
     return error.Unimplemented;
