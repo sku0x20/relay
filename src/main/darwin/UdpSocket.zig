@@ -1,11 +1,6 @@
 const sys = @import("sys.zig");
 const SocketAddress = @import("../SocketAddress.zig");
 
-pub const Receiver = struct {
-    ctx: *anyopaque,
-    recv: *const fn (ctx: *anyopaque, data: []const u8) void,
-};
-
 const UdpSocket = @This();
 
 socket: i32,
