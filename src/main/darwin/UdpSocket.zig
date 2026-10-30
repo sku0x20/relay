@@ -32,6 +32,7 @@ pub fn init(socketAddress: SocketAddress) !UdpSocket {
 
 pub const Datagram = struct {
     data: []u8,
+    len: usize,
     peer: SocketAddress,
 };
 
@@ -46,7 +47,8 @@ pub fn send(self: *const UdpSocket, datagram: *const Datagram) !void {
         .port = @byteSwap(datagram.peer.port),
         .addr = @byteSwap(datagram.peer.addr),
     };
-    try check(sys.sendto(self.socket, datagram.data.ptr, datagram.data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
+    const data = datagram.data[0..datagram.len];
+    try check(sys.sendto(self.socket, data.ptr, data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
 }
 
 pub fn recv(self: *const UdpSocket, datagram: *Datagram) !void {

@@ -41,6 +41,7 @@ test "datagram delivered by send" {
     var data = "hi".*;
     try socket.send(&.{
         .data = &data,
+        .len = data.len,
         .peer = .{ .addr = 0x7f000001, .port = @byteSwap(addr.port) },
     });
 
