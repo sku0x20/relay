@@ -10,12 +10,8 @@ const UdpSocket = @This();
 
 socket: i32,
 addr: sys.SockaddrIn,
-receiver: Receiver,
 
-pub fn init(
-    socketAddress: SocketAddress,
-    receiver: Receiver,
-) !UdpSocket {
+pub fn init(socketAddress: SocketAddress) !UdpSocket {
     const socket = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
     try check(socket);
     errdefer _ = sys.close(socket);
@@ -36,7 +32,6 @@ pub fn init(
     return .{
         .socket = socket,
         .addr = addr,
-        .receiver = receiver,
     };
 }
 
