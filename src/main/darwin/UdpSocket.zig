@@ -40,6 +40,8 @@ pub fn init(
     };
 }
 
+/// Nonblocking: `error.Again` means the kernel had no room and the datagram was not sent.
+/// It is not queued or retried; the caller decides whether to drop or retry.
 pub fn sendTo(self: *const UdpSocket, data: []const u8, to: SocketAddress) !void {
     const addr: sys.SockaddrIn = .{
         .port = @byteSwap(to.port),
