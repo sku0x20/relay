@@ -26,16 +26,12 @@ test "bound to requested port" {
     try testing.expectEqual(@byteSwap(@as(u16, 48879)), socket.addr.port);
 }
 
-fn addressOf(socket: *const UdpSocket) SocketAddress {
-    return .{ .addr = @byteSwap(socket.addr.addr), .port = @byteSwap(socket.addr.port) };
-}
+test "nonblocking after init" {
+    const socket = try UdpSocket.init(localhost);
+    defer socket.deinit();
 
-fn recvWait(socket: *const UdpSocket, datagram: *UdpSocket.Datagram) !void {
-    for (0..100) |_| {
-        if (socket.recv(datagram)) |_| return else |err| if (err != error.Again) return err;
-        try testing.io.sleep(.fromMilliseconds(1), .awake);
-    }
-    return error.Timeout;
+    const flags = sys.fcntl(socket.socket, sys.F.GETFL);
+    try testing.expect(flags & sys.O.NONBLOCK != 0);
 }
 
 test "datagram delivered by send" {
@@ -71,10 +67,14 @@ test "datagram received by recv" {
     try testing.expectEqual(addressOf(&sender), datagram.peer);
 }
 
-test "nonblocking after init" {
-    const socket = try UdpSocket.init(localhost);
-    defer socket.deinit();
+fn addressOf(socket: *const UdpSocket) SocketAddress {
+    return .{ .addr = @byteSwap(socket.addr.addr), .port = @byteSwap(socket.addr.port) };
+}
 
-    const flags = sys.fcntl(socket.socket, sys.F.GETFL);
-    try testing.expect(flags & sys.O.NONBLOCK != 0);
+fn recvWait(socket: *const UdpSocket, datagram: *UdpSocket.Datagram) !void {
+    for (0..100) |_| {
+        if (socket.recv(datagram)) |_| return else |err| if (err != error.Again) return err;
+        try testing.io.sleep(.fromMilliseconds(1), .awake);
+    }
+    return error.Timeout;
 }
