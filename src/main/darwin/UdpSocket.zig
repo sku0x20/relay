@@ -15,10 +15,7 @@ pub fn init(socketAddress: SocketAddress) !UdpSocket {
     try check(flags);
     try check(sys.fcntl(socket, sys.F.SETFL, flags | sys.O.NONBLOCK));
 
-    var addr: sys.SockaddrIn = .{
-        .port = @byteSwap(socketAddress.port),
-        .addr = @byteSwap(socketAddress.addr),
-    };
+    var addr = toSockaddr(socketAddress);
     var len: u32 = @sizeOf(sys.SockaddrIn);
 
     try check(sys.bind(socket, &addr, len));
@@ -26,10 +23,7 @@ pub fn init(socketAddress: SocketAddress) !UdpSocket {
 
     return .{
         .socket = socket,
-        .address = .{
-            .addr = @byteSwap(addr.addr),
-            .port = @byteSwap(addr.port),
-        },
+        .address = fromSockaddr(addr),
     };
 }
 
@@ -47,10 +41,7 @@ pub const Datagram = struct {
 /// need memory limits and write-ready events for a case that rarely happens.
 pub fn send(self: *const UdpSocket, datagram: *const Datagram) !void {
     if (datagram.len > datagram.data.len) unreachable;
-    const addr: sys.SockaddrIn = .{
-        .port = @byteSwap(datagram.peer.port),
-        .addr = @byteSwap(datagram.peer.addr),
-    };
+    const addr = toSockaddr(datagram.peer);
     try check(sys.sendto(self.socket, datagram.data.ptr, datagram.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
 }
 
@@ -65,10 +56,7 @@ pub fn recv(self: *const UdpSocket, datagram: *Datagram) !void {
     const n = sys.recvfrom(self.socket, datagram.data.ptr, datagram.data.len, 0, &addr, &len);
     try check(n);
     datagram.len = @intCast(n);
-    datagram.peer = .{
-        .addr = @byteSwap(addr.addr),
-        .port = @byteSwap(addr.port),
-    };
+    datagram.peer = fromSockaddr(addr);
 }
 
 pub fn close(self: *const UdpSocket) !void {
@@ -77,6 +65,20 @@ pub fn close(self: *const UdpSocket) !void {
 
 pub fn deinit(self: *const UdpSocket) void {
     self.close() catch {};
+}
+
+inline fn toSockaddr(address: SocketAddress) sys.SockaddrIn {
+    return .{
+        .port = @byteSwap(address.port),
+        .addr = @byteSwap(address.addr),
+    };
+}
+
+inline fn fromSockaddr(addr: sys.SockaddrIn) SocketAddress {
+    return .{
+        .addr = @byteSwap(addr.addr),
+        .port = @byteSwap(addr.port),
+    };
 }
 
 fn check(rc: anytype) !void {
