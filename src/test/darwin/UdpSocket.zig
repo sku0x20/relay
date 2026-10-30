@@ -58,6 +58,10 @@ test "datagram received by recv" {
     defer _ = sys.close(peer);
     try testing.expectEqual(2, sys.sendto(peer, "hi", 2, 0, &socket.addr, @sizeOf(sys.SockaddrIn)));
 
+    var addr: sys.SockaddrIn = undefined;
+    var len: u32 = @sizeOf(sys.SockaddrIn);
+    try testing.expectEqual(0, sys.getsockname(peer, &addr, &len));
+
     var buf: [16]u8 = undefined;
     var datagram: UdpSocket.Datagram = .{ .data = &buf, .len = 0, .peer = undefined };
     for (0..100) |_| {
@@ -66,6 +70,7 @@ test "datagram received by recv" {
     } else return error.Timeout;
 
     try testing.expectEqualStrings("hi", datagram.data[0..datagram.len]);
+    try testing.expectEqual(SocketAddress{ .addr = 0x7f000001, .port = @byteSwap(addr.port) }, datagram.peer);
 }
 
 test "nonblocking after init" {
