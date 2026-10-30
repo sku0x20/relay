@@ -4,6 +4,10 @@
 
 - Commit after every meaningful change (a finished, working step), without waiting to be asked.
 
+## Scratch
+
+- Use `.tmp/` in the project (gitignored) for scratch files, not the system temp dir.
+
 ## Naming
 
 - Crisp, short names.

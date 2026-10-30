@@ -4,3 +4,4 @@ zig-out/
 .idea/
 .cache/
 .ash_history
+.tmp/
