@@ -54,3 +54,11 @@ test "datagram delivered by sendTo" {
     try testing.expectEqual(2, sys.recv(peer, &buf, buf.len, 0));
     try testing.expectEqualStrings("hi", buf[0..2]);
 }
+
+test "nonblocking after init" {
+    const socket = try UdpSocket.init(socketAddress, NULL_RECEIVER);
+    defer socket.deinit();
+
+    const flags = sys.fcntl(socket.socket, sys.F.GETFL);
+    try testing.expect(flags & sys.O.NONBLOCK != 0);
+}

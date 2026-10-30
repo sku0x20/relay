@@ -20,6 +20,10 @@ pub fn init(
     try check(socket);
     errdefer _ = sys.close(socket);
 
+    const flags = sys.fcntl(socket, sys.F.GETFL);
+    try check(flags);
+    try check(sys.fcntl(socket, sys.F.SETFL, flags | sys.O.NONBLOCK));
+
     var addr: sys.SockaddrIn = .{
         .port = @byteSwap(socketAddress.port),
         .addr = @byteSwap(socketAddress.addr),
