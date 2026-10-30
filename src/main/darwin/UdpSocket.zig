@@ -43,6 +43,7 @@ pub const Datagram = struct {
 /// UDP is lossy anyway, so dropping is usually fine, and a queue here would
 /// need memory limits and write-ready events for a case that rarely happens.
 pub fn send(self: *const UdpSocket, datagram: *const Datagram) !void {
+    if (datagram.len > datagram.data.len) unreachable;
     const addr: sys.SockaddrIn = .{
         .port = @byteSwap(datagram.peer.port),
         .addr = @byteSwap(datagram.peer.addr),
