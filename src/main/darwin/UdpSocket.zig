@@ -44,6 +44,12 @@ pub fn sendTo(self: *const UdpSocket, data: []const u8, to: SocketAddress) !void
     try check(sys.sendto(self.socket, data.ptr, data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
 }
 
+pub fn recvFrom(self: *const UdpSocket, buf: []u8) !usize {
+    _ = self;
+    _ = buf;
+    return error.Unimplemented;
+}
+
 pub fn close(self: *const UdpSocket) !void {
     try check(sys.close(self.socket));
 }
