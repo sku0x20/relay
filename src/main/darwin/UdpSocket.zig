@@ -40,6 +40,7 @@ pub fn init(
     };
 }
 
+// TODO: tell the caller when the socket is writable again, so it can retry.
 /// Nonblocking: `error.Again` means the kernel had no room and the datagram was not sent.
 /// It is not queued or retried; the caller decides whether to drop or retry.
 /// UDP is lossy anyway, so dropping is usually fine, and a queue here would
