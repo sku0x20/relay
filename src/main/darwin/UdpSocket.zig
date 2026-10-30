@@ -41,7 +41,7 @@ pub const Datagram = struct {
 /// It is not queued or retried; the caller decides whether to drop or retry.
 /// UDP is lossy anyway, so dropping is usually fine, and a queue here would
 /// need memory limits and write-ready events for a case that rarely happens.
-pub fn sendTo(self: *const UdpSocket, datagram: Datagram) !void {
+pub fn send(self: *const UdpSocket, datagram: Datagram) !void {
     const addr: sys.SockaddrIn = .{
         .port = @byteSwap(datagram.peer.port),
         .addr = @byteSwap(datagram.peer.addr),
@@ -49,7 +49,7 @@ pub fn sendTo(self: *const UdpSocket, datagram: Datagram) !void {
     try check(sys.sendto(self.socket, datagram.data.ptr, datagram.data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
 }
 
-pub fn recvFrom(self: *const UdpSocket, buf: []u8) !Datagram {
+pub fn recv(self: *const UdpSocket, buf: []u8) !Datagram {
     _ = self;
     _ = buf;
     return error.Unimplemented;

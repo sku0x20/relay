@@ -26,7 +26,7 @@ test "bound to requested port" {
     try testing.expectEqual(@byteSwap(@as(u16, 48879)), socket.addr.port);
 }
 
-test "datagram delivered by sendTo" {
+test "datagram delivered by send" {
     const peer = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
     defer _ = sys.close(peer);
 
@@ -38,7 +38,7 @@ test "datagram delivered by sendTo" {
     const socket = try UdpSocket.init(socketAddress);
     defer socket.deinit();
 
-    try socket.sendTo(.{
+    try socket.send(.{
         .data = "hi",
         .peer = .{ .addr = 0x7f000001, .port = @byteSwap(addr.port) },
     });
