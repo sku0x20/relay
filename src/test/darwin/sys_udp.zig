@@ -69,3 +69,35 @@ test "datagrams read one per recv" {
     try std.testing.expectEqualStrings("there", buf[0..5]);
     try std.testing.expectEqual(sender_addr.port, from.port);
 }
+
+test "datagram truncated to buffer, rest discarded" {
+    const receiver = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
+    try std.testing.expect(receiver >= 0);
+    defer _ = sys.close(receiver);
+
+    var addr: sys.SockaddrIn = .{
+        .port = 0,
+        .addr = std.mem.nativeToBig(u32, sys.INADDR.LOOPBACK),
+    };
+    var len: u32 = @sizeOf(sys.SockaddrIn);
+    try std.testing.expectEqual(0, sys.bind(receiver, &addr, len));
+    try std.testing.expectEqual(0, sys.getsockname(receiver, &addr, &len));
+
+    const sender = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
+    try std.testing.expect(sender >= 0);
+    defer _ = sys.close(sender);
+
+    try std.testing.expectEqual(4, sys.sendto(sender, "abcd", 4, 0, &addr, len));
+    try std.testing.expectEqual(2, sys.sendto(sender, "ef", 2, 0, &addr, len));
+
+    // blocking socket: recvfrom waits for the datagram, no kqueue needed.
+    // returns the bytes copied, not the datagram's size, and no error.
+    var small: [2]u8 = undefined;
+    try std.testing.expectEqual(2, sys.recvfrom(receiver, &small, small.len, 0, null, null));
+    try std.testing.expectEqualStrings("ab", &small);
+
+    // "cd" is gone: the next read is the next datagram.
+    var buf: [16]u8 = undefined;
+    try std.testing.expectEqual(2, sys.recvfrom(receiver, &buf, buf.len, 0, null, null));
+    try std.testing.expectEqualStrings("ef", buf[0..2]);
+}
