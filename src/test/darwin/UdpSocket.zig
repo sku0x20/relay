@@ -50,6 +50,21 @@ test "datagram delivered by send" {
     try testing.expectEqualStrings("hi", buf[0..2]);
 }
 
+test "datagram received by recv" {
+    const socket = try UdpSocket.init(socketAddress);
+    defer socket.deinit();
+
+    const peer = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
+    defer _ = sys.close(peer);
+    try testing.expectEqual(2, sys.sendto(peer, "hi", 2, 0, &socket.addr, @sizeOf(sys.SockaddrIn)));
+
+    var buf: [16]u8 = undefined;
+    var datagram: UdpSocket.Datagram = .{ .data = &buf, .len = 0, .peer = undefined };
+    try socket.recv(&datagram);
+
+    try testing.expectEqualStrings("hi", datagram.data[0..datagram.len]);
+}
+
 test "nonblocking after init" {
     const socket = try UdpSocket.init(socketAddress);
     defer socket.deinit();
