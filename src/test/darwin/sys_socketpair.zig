@@ -143,7 +143,7 @@ test "socket writable again after peer drains" {
     }
 
     // fill fds[0]'s send buffer.
-    const chunk = [_]u8{0} ** 4096;
+    const chunk: [4096]u8 = @splat(0);
     while (true) {
         const rc = sys.send(fds[0], &chunk, chunk.len, 0);
         if (rc == -1) {
@@ -197,7 +197,7 @@ test "short send when buffer can't fit all" {
     try std.testing.expectEqual(0, sys.fcntl(fds[0], sys.F.SETFL, flags | sys.O.NONBLOCK));
 
     // more than the send buffer holds.
-    const big = [_]u8{0} ** (1024 * 1024);
+    const big: [1024 * 1024]u8 = @splat(0);
 
     // takes what fits and says how much; the caller resends the rest later.
     const sent = sys.send(fds[0], &big, big.len, 0);
