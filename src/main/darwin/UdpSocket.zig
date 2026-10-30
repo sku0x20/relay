@@ -52,9 +52,15 @@ pub fn send(self: *const UdpSocket, datagram: *const Datagram) !void {
 }
 
 pub fn recv(self: *const UdpSocket, datagram: *Datagram) !void {
-    const n = sys.recvfrom(self.socket, datagram.data.ptr, datagram.data.len, 0, null, null);
+    var addr: sys.SockaddrIn = undefined;
+    var len: u32 = @sizeOf(sys.SockaddrIn);
+    const n = sys.recvfrom(self.socket, datagram.data.ptr, datagram.data.len, 0, &addr, &len);
     try check(n);
     datagram.len = @intCast(n);
+    datagram.peer = .{
+        .addr = @byteSwap(addr.addr),
+        .port = @byteSwap(addr.port),
+    };
 }
 
 pub fn close(self: *const UdpSocket) !void {
