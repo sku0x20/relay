@@ -15,6 +15,10 @@
 - `src/main` does not import std: use `sys.zig` bindings and builtins (`@byteSwap`, `@bitCast`), and hand-write small helpers. Tests may use std.
 - No comments, doc comments included, unless they explain something non-obvious.
 
+## Tests
+
+- `src/test/darwin/sys_*.zig` call `sys.zig` directly and record kernel behaviour. Keep them raw: don't port, move or delete them. Abstractions get their own test files.
+
 ## sys.zig
 
 - Every constant gets a trailing comment with its C name: `pub const FILTER: i16 = -10; // EVFILT_USER`. Verify values in `$(xcrun --show-sdk-path)/usr/include`.
