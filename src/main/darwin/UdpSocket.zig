@@ -31,7 +31,7 @@ pub fn init(socketAddress: SocketAddress) !UdpSocket {
 }
 
 pub const Datagram = struct {
-    data: []const u8,
+    data: []u8,
     peer: SocketAddress,
 };
 
@@ -49,9 +49,9 @@ pub fn send(self: *const UdpSocket, datagram: Datagram) !void {
     try check(sys.sendto(self.socket, datagram.data.ptr, datagram.data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
 }
 
-pub fn recv(self: *const UdpSocket, buf: []u8) !Datagram {
+pub fn recv(self: *const UdpSocket, datagram: *Datagram) !void {
     _ = self;
-    _ = buf;
+    _ = datagram;
     return error.Unimplemented;
 }
 

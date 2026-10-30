@@ -38,8 +38,9 @@ test "datagram delivered by send" {
     const socket = try UdpSocket.init(socketAddress);
     defer socket.deinit();
 
+    var data = "hi".*;
     try socket.send(.{
-        .data = "hi",
+        .data = &data,
         .peer = .{ .addr = 0x7f000001, .port = @byteSwap(addr.port) },
     });
 
