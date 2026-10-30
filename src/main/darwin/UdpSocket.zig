@@ -53,7 +53,9 @@ pub fn send(self: *const UdpSocket, datagram: *const Datagram) !void {
 
 /// Nonblocking: `error.Again` means no datagram is queued yet; wait until readable and retry.
 /// Fills `datagram.data` and sets `len` and `peer`. `data` itself is left as is, so the
-/// same Datagram can be reused. A datagram longer than `data` is silently truncated.
+/// same Datagram can be reused. A datagram longer than `data` is silently truncated:
+/// the rest is discarded, and the next `recv` returns the next datagram. `len == data.len`
+/// does not tell truncation from an exact fit; that needs `recvmsg` and `MSG_TRUNC` in `msg_flags`.
 pub fn recv(self: *const UdpSocket, datagram: *Datagram) !void {
     var addr: sys.SockaddrIn = undefined;
     var len: u32 = @sizeOf(sys.SockaddrIn);
