@@ -4,7 +4,7 @@ const SocketAddress = @import("../SocketAddress.zig");
 const UdpSocket = @This();
 
 socket: i32,
-addr: sys.SockaddrIn,
+address: SocketAddress,
 
 pub fn init(socketAddress: SocketAddress) !UdpSocket {
     const socket = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
@@ -26,7 +26,10 @@ pub fn init(socketAddress: SocketAddress) !UdpSocket {
 
     return .{
         .socket = socket,
-        .addr = addr,
+        .address = .{
+            .addr = @byteSwap(addr.addr),
+            .port = @byteSwap(addr.port),
+        },
     };
 }
 
