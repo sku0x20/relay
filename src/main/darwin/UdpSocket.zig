@@ -36,6 +36,14 @@ pub fn init(
     };
 }
 
+pub fn sendTo(self: *const UdpSocket, data: []const u8, to: SocketAddress) !void {
+    const addr: sys.SockaddrIn = .{
+        .port = @byteSwap(to.port),
+        .addr = @byteSwap(to.addr),
+    };
+    try check(sys.sendto(self.socket, data.ptr, data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
+}
+
 pub fn close(self: *const UdpSocket) !void {
     try check(sys.close(self.socket));
 }
