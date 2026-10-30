@@ -47,8 +47,7 @@ pub fn send(self: *const UdpSocket, datagram: *const Datagram) !void {
         .port = @byteSwap(datagram.peer.port),
         .addr = @byteSwap(datagram.peer.addr),
     };
-    const data = datagram.data[0..datagram.len];
-    try check(sys.sendto(self.socket, data.ptr, data.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
+    try check(sys.sendto(self.socket, datagram.data.ptr, datagram.len, 0, &addr, @sizeOf(sys.SockaddrIn)));
 }
 
 pub fn recv(self: *const UdpSocket, datagram: *Datagram) !void {
