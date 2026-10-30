@@ -52,9 +52,9 @@ pub fn send(self: *const UdpSocket, datagram: *const Datagram) !void {
 }
 
 pub fn recv(self: *const UdpSocket, datagram: *Datagram) !void {
-    _ = self;
-    _ = datagram;
-    return error.Unimplemented;
+    const n = sys.recvfrom(self.socket, datagram.data.ptr, datagram.data.len, 0, null, null);
+    try check(n);
+    datagram.len = @intCast(n);
 }
 
 pub fn close(self: *const UdpSocket) !void {

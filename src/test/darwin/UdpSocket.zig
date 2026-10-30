@@ -60,7 +60,10 @@ test "datagram received by recv" {
 
     var buf: [16]u8 = undefined;
     var datagram: UdpSocket.Datagram = .{ .data = &buf, .len = 0, .peer = undefined };
-    try socket.recv(&datagram);
+    for (0..100) |_| {
+        if (socket.recv(&datagram)) |_| break else |err| if (err != error.Again) return err;
+        try testing.io.sleep(.fromMilliseconds(1), .awake);
+    } else return error.Timeout;
 
     try testing.expectEqualStrings("hi", datagram.data[0..datagram.len]);
 }
