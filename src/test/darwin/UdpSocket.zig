@@ -26,28 +26,32 @@ test "bound to requested port" {
     try testing.expectEqual(@byteSwap(@as(u16, 48879)), socket.addr.port);
 }
 
+fn addressOf(socket: *const UdpSocket) SocketAddress {
+    return .{ .addr = @byteSwap(socket.addr.addr), .port = @byteSwap(socket.addr.port) };
+}
+
+fn recvWait(socket: *const UdpSocket, datagram: *UdpSocket.Datagram) !void {
+    for (0..100) |_| {
+        if (socket.recv(datagram)) |_| return else |err| if (err != error.Again) return err;
+        try testing.io.sleep(.fromMilliseconds(1), .awake);
+    }
+    return error.Timeout;
+}
+
 test "datagram delivered by send" {
-    const peerFd = sys.socket(sys.AF.INET, sys.SOCK.DGRAM, 0);
-    defer _ = sys.close(peerFd);
-
-    var peerAddr: sys.SockaddrIn = .{ .port = 0, .addr = @byteSwap(localhost.addr) };
-    var peerAddrLen: u32 = @sizeOf(sys.SockaddrIn);
-    try testing.expectEqual(0, sys.bind(peerFd, &peerAddr, peerAddrLen));
-    try testing.expectEqual(0, sys.getsockname(peerFd, &peerAddr, &peerAddrLen));
-
-    const socket = try UdpSocket.init(localhost);
-    defer socket.deinit();
+    const sender = try UdpSocket.init(localhost);
+    defer sender.deinit();
+    const receiver = try UdpSocket.init(localhost);
+    defer receiver.deinit();
 
     var payload = "hi".*;
-    try socket.send(&.{
-        .data = &payload,
-        .len = payload.len,
-        .peer = .{ .addr = localhost.addr, .port = @byteSwap(peerAddr.port) },
-    });
+    try sender.send(&.{ .data = &payload, .len = payload.len, .peer = addressOf(&receiver) });
 
     var buf: [16]u8 = undefined;
-    try testing.expectEqual(2, sys.recv(peerFd, &buf, buf.len, 0));
-    try testing.expectEqualStrings("hi", buf[0..2]);
+    var datagram: UdpSocket.Datagram = .{ .data = &buf, .len = 0, .peer = undefined };
+    try recvWait(&receiver, &datagram);
+
+    try testing.expectEqualStrings("hi", datagram.data[0..datagram.len]);
 }
 
 test "datagram received by recv" {
