@@ -42,6 +42,8 @@ pub fn init(
 
 /// Nonblocking: `error.Again` means the kernel had no room and the datagram was not sent.
 /// It is not queued or retried; the caller decides whether to drop or retry.
+/// UDP is lossy anyway, so dropping is usually fine, and a queue here would
+/// need memory limits and write-ready events for a case that rarely happens.
 pub fn sendTo(self: *const UdpSocket, data: []const u8, to: SocketAddress) !void {
     const addr: sys.SockaddrIn = .{
         .port = @byteSwap(to.port),
