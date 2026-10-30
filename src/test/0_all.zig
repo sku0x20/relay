@@ -1,4 +1,4 @@
-//! Lists every test file in src/test so they get compiled and run.
+// Lists every test file in src/test so they get compiled and run.
 
 const builtin = @import("builtin");
 
